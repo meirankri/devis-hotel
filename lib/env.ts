@@ -38,6 +38,7 @@ const envSchema = z.object({
   CLOUDFLARE_SECRET_KEY: z.string().optional(),
   CLOUDFLARE_BUCKET: z.string().optional(),
   CLOUDFLARE_REGION: z.string().optional(),
+  CLOUDFLARE_ENDPOINT: z.string().url().optional(),
 
   // Variables Cloudflare - Public
   CLOUDFLARE_URL: z.string().url().optional(),
@@ -107,6 +108,7 @@ const processEnv = {
   CLOUDFLARE_BUCKET: process.env.CLOUDFLARE_BUCKET,
   CLOUDFLARE_URL: process.env.CLOUDFLARE_URL,
   CLOUDFLARE_REGION: process.env.CLOUDFLARE_REGION,
+  CLOUDFLARE_ENDPOINT: process.env.CLOUDFLARE_ENDPOINT,
   NEXT_PUBLIC_MAX_FILE_SIZE: process.env.NEXT_PUBLIC_MAX_FILE_SIZE,
   FIREBASE_API_KEY: process.env.FIREBASE_API_KEY,
   FIREBASE_AUTH_DOMAIN: process.env.FIREBASE_AUTH_DOMAIN,
