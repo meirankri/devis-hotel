@@ -145,7 +145,7 @@
         "applyPrices": "Apply Prices",
         "pricingUpdateSuccess": "Pricing updated",
         "pricingUpdateSuccessDesc": "Pricing has been updated successfully",
-        "pricingHelp": "Enter a price for each age range you want to configure. You can leave unused age ranges empty.",
+        "pricingHelp": "Enter the total price per person for the entire stay (not the price per night). You can leave unused age ranges empty.",
         "pricingUpdateError": "Error",
         "pricingUpdateErrorDesc": "An error occurred while updating pricing"
     },
@@ -296,7 +296,7 @@
             "person": "person",
             "specialRequests": "Special requests",
             "estimatedTotal": "Estimated total",
-            "priceNote": "This price is an estimate based on current rates",
+            "priceNote": "This price is an estimate for the entire stay based on current rates",
             "occupants": "Occupants",
             "totalOccupants": "Total occupants"
         }
@@ -353,7 +353,8 @@
         "calculate": "Calculate",
         "calculating": "Calculating...",
         "priceHint": "Click Calculate to get an estimate based on current rates",
-        "pricePerNight": "Average price per person per night",
+        "pricePerPerson": "Price per person for the entire stay",
+        "priceForStay": "For a stay of {nights} nights",
         "priceCalculated": "Price calculated",
         "priceCalculatedDesc": "The estimated total price is {price}€",
         "acceptQuote": "Accept quote",

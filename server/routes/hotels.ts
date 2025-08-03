@@ -12,16 +12,16 @@ import { prisma } from '@/lib/database/db';
 const hotelRepository = new PrismaHotelRepository(prisma);
 
 export const hotelsRouter = router({
-  getAll: protectedProcedure.query(async () => {
+  getAll: protectedProcedure.query(async ({ ctx }) => {
     const getHotelsUseCase = new GetHotelsUseCase(hotelRepository);
-    return await getHotelsUseCase.execute();
+    return await getHotelsUseCase.execute(ctx.organizationId);
   }),
 
   getById: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const getHotelsUseCase = new GetHotelsUseCase(hotelRepository);
-      const hotel = await getHotelsUseCase.getById(input.id);
+      const hotel = await getHotelsUseCase.getById(input.id, ctx.organizationId);
       
       if (!hotel) {
         throw new TRPCError({
@@ -35,9 +35,9 @@ export const hotelsRouter = router({
 
   create: protectedProcedure
     .input(createHotelSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const createHotelUseCase = new CreateHotelUseCase(hotelRepository);
-      return await createHotelUseCase.execute(input);
+      return await createHotelUseCase.execute(input, ctx.organizationId);
     }),
 
   update: protectedProcedure
@@ -45,11 +45,11 @@ export const hotelsRouter = router({
       id: z.string().uuid(),
       data: updateHotelSchema,
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const updateHotelUseCase = new UpdateHotelUseCase(hotelRepository);
       
       try {
-        return await updateHotelUseCase.execute(input.id, input.data);
+        return await updateHotelUseCase.execute(input.id, input.data, ctx.organizationId);
       } catch (error) {
         if (error instanceof Error && error.message === 'Hôtel non trouvé') {
           throw new TRPCError({
@@ -63,11 +63,11 @@ export const hotelsRouter = router({
 
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const deleteHotelUseCase = new DeleteHotelUseCase(hotelRepository);
       
       try {
-        await deleteHotelUseCase.execute(input.id);
+        await deleteHotelUseCase.execute(input.id, ctx.organizationId);
         return { success: true };
       } catch (error) {
         if (error instanceof Error && error.message === 'Hôtel non trouvé') {

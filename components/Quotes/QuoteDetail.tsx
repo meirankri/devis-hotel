@@ -70,12 +70,7 @@ export function QuoteDetail({ quote }: QuoteDetailProps) {
   const calculatePrice = () => {
     setIsCalculating(true);
     
-    // Calculer le nombre de nuits
-    const checkIn = new Date(quote.checkIn);
-    const checkOut = new Date(quote.checkOut);
-    const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
-    
-    // Calculer le prix total basé sur les participants et les tarifs
+    // Calculer le prix total basé sur les participants et les tarifs (prix par séjour)
     let total = 0;
     
     quote.quoteParticipants.forEach((participant: any) => {
@@ -87,7 +82,8 @@ export function QuoteDetail({ quote }: QuoteDetailProps) {
       
       if (prices.length > 0) {
         const avgPrice = prices.reduce((sum: number, price: number) => sum + price, 0) / prices.length;
-        total += avgPrice * participant.count * nights;
+        // Prix par séjour, pas par nuit
+        total += avgPrice * participant.count;
       }
     });
     
@@ -299,7 +295,10 @@ export function QuoteDetail({ quote }: QuoteDetailProps) {
           {totalPrice > 0 && (
             <div className="p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-blue-800">
-                {t('pricePerNight')}: {(totalPrice / nights / totalParticipants).toFixed(2)}€
+                {t('pricePerPerson')}: {(totalPrice / totalParticipants).toFixed(2)}€
+              </p>
+              <p className="text-xs text-blue-700 mt-1">
+                {t('priceForStay', { nights })}
               </p>
             </div>
           )}

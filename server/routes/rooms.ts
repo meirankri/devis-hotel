@@ -17,9 +17,14 @@ const ageRangeRepository = new PrismaAgeRangeRepository(prisma);
 export const roomsRouter = router({
   getByHotelId: protectedProcedure
     .input(z.object({ hotelId: z.string().uuid() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const rooms = await prisma.room.findMany({
-        where: { hotelId: input.hotelId },
+        where: { 
+          hotelId: input.hotelId,
+          hotel: {
+            organizationId: ctx.organizationId
+          }
+        },
         include: {
           roomPricings: {
             include: {
@@ -40,9 +45,14 @@ export const roomsRouter = router({
 
   getById: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .query(async ({ input }) => {
-      const room = await prisma.room.findUnique({
-        where: { id: input.id },
+    .query(async ({ input, ctx }) => {
+      const room = await prisma.room.findFirst({
+        where: { 
+          id: input.id,
+          hotel: {
+            organizationId: ctx.organizationId
+          }
+        },
         include: {
           roomPricings: {
             include: {
@@ -64,12 +74,12 @@ export const roomsRouter = router({
 
   create: protectedProcedure
     .input(createRoomSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const roomData = Room.create(input);
-      const room = await roomRepository.save(roomData);
+      const room = await roomRepository.save(roomData, ctx.organizationId);
       
       // Créer les prix par défaut pour toutes les tranches d'âge
-      const ageRanges = await ageRangeRepository.findAll();
+      const ageRanges = await ageRangeRepository.findAllByOrganization(ctx.organizationId);
       for (const ageRange of ageRanges) {
         const roomPricingData = RoomPricing.create({
           roomId: room.id,
@@ -87,8 +97,8 @@ export const roomsRouter = router({
       id: z.string().uuid(),
       data: updateRoomSchema,
     }))
-    .mutation(async ({ input }) => {
-      const room = await roomRepository.findById(input.id);
+    .mutation(async ({ input, ctx }) => {
+      const room = await roomRepository.findById(input.id, ctx.organizationId);
       if (!room) {
         throw new TRPCError({
           code: 'NOT_FOUND',
@@ -97,13 +107,13 @@ export const roomsRouter = router({
       }
 
       room.update(input.data);
-      return await roomRepository.update(input.id, input.data);
+      return await roomRepository.update(input.id, input.data, ctx.organizationId);
     }),
 
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ input }) => {
-      const room = await roomRepository.findById(input.id);
+    .mutation(async ({ input, ctx }) => {
+      const room = await roomRepository.findById(input.id, ctx.organizationId);
       if (!room) {
         throw new TRPCError({
           code: 'NOT_FOUND',
@@ -111,7 +121,7 @@ export const roomsRouter = router({
         });
       }
 
-      await roomRepository.delete(input.id);
+      await roomRepository.delete(input.id, ctx.organizationId);
       return { success: true };
     }),
 
@@ -121,7 +131,15 @@ export const roomsRouter = router({
       ageRangeId: z.string().uuid(),
       price: z.number().min(0),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      // Vérifier que la chambre appartient à l'organisation
+      const room = await roomRepository.findById(input.roomId, ctx.organizationId);
+      if (!room) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Chambre non trouvée',
+        });
+      }
       await prisma.roomPricing.upsert({
         where: {
           roomId_ageRangeId: {
@@ -148,7 +166,17 @@ export const roomsRouter = router({
       ageRangeId: z.string().uuid(),
       price: z.number().min(0),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      // Vérifier que toutes les chambres appartiennent à l'organisation
+      for (const roomId of input.roomIds) {
+        const room = await roomRepository.findById(roomId, ctx.organizationId);
+        if (!room) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Une ou plusieurs chambres non trouvées',
+          });
+        }
+      }
       await roomPricingRepository.updateMultipleRooms(
         input.roomIds,
         input.ageRangeId,

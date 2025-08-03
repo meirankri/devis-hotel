@@ -125,20 +125,20 @@ export function generateQuotePdf({ quote, roomPrices }: QuoteData): Blob {
       ? pricesForAgeRange.reduce((sum, p) => sum + p.price, 0) / pricesForAgeRange.length
       : 0;
     
-    const totalPrice = avgPrice * participant.count * nights;
+    // Prix par séjour complet, pas par nuit
+    const totalPrice = avgPrice * participant.count;
     
     return [
       ageRangeText,
       participant.count.toString(),
       avgPrice > 0 ? `${avgPrice.toFixed(2)} €` : 'Non défini',
-      `${nights} nuits`,
       avgPrice > 0 ? `${totalPrice.toFixed(2)} €` : 'À définir'
     ];
   });
   
   doc.autoTable({
     startY: 125,
-    head: [['Catégorie', 'Nombre', 'Prix/nuit', 'Durée', 'Total']],
+    head: [['Catégorie', 'Nombre', 'Prix/séjour', 'Total']],
     body: participantsData,
     theme: 'striped',
     headStyles: {
@@ -151,17 +151,16 @@ export function generateQuotePdf({ quote, roomPrices }: QuoteData): Blob {
       fontSize: 10
     },
     columnStyles: {
-      0: { cellWidth: 80 },
-      1: { cellWidth: 25, halign: 'center' },
-      2: { cellWidth: 30, halign: 'right' },
-      3: { cellWidth: 25, halign: 'center' },
-      4: { cellWidth: 30, halign: 'right' }
+      0: { cellWidth: 90 },
+      1: { cellWidth: 30, halign: 'center' },
+      2: { cellWidth: 35, halign: 'right' },
+      3: { cellWidth: 35, halign: 'right' }
     }
   });
   
   // Calculate total
   const totalAmount = participantsData.reduce((sum, row) => {
-    const priceText = row[4];
+    const priceText = row[3]; // Index 3 maintenant car on a retiré la colonne Durée
     if (priceText === 'À définir') return sum;
     return sum + parseFloat(priceText.replace(' €', ''));
   }, 0);
@@ -172,12 +171,12 @@ export function generateQuotePdf({ quote, roomPrices }: QuoteData): Blob {
   doc.rect(110, finalY, 85, 20, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.text('TOTAL TTC:', 115, finalY + 13);
+  doc.text(`TOTAL TTC (${nights} nuits):`, 115, finalY + 13);
   doc.setFontSize(16);
   doc.text(`${totalAmount.toFixed(2)} €`, 190, finalY + 13, { align: 'right' });
   
   // Check if some prices are not defined
-  const hasUndefinedPrices = participantsData.some(row => row[4] === 'À définir');
+  const hasUndefinedPrices = participantsData.some(row => row[3] === 'À définir');
   
   // Footer
   doc.setFont('helvetica', 'normal');

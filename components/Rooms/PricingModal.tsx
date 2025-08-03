@@ -156,6 +156,11 @@ export function PricingModal({
             <p className="text-sm text-gray-600">
               {t('pricingHelp')}
             </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-xs text-blue-800">
+                <strong>Important :</strong> Les prix saisis correspondent au prix total par personne pour le séjour complet, pas au prix par nuit.
+              </p>
+            </div>
             
             {/* Tranches d'âge existantes */}
             {ageRanges.map((ageRange) => (

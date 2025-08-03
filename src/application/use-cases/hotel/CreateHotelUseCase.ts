@@ -5,7 +5,7 @@ import { CreateHotelDto } from '@/application/dto/hotel.dto';
 export class CreateHotelUseCase {
   constructor(private hotelRepository: HotelRepository) {}
 
-  async execute(dto: CreateHotelDto): Promise<Hotel> {
+  async execute(dto: CreateHotelDto, organizationId: string): Promise<Hotel> {
     const hotelData = Hotel.create({
       name: dto.name,
       description: dto.description,
@@ -13,6 +13,6 @@ export class CreateHotelUseCase {
       imageUrl: dto.imageUrl,
     });
 
-    return await this.hotelRepository.save(hotelData);
+    return await this.hotelRepository.save(hotelData, organizationId);
   }
 }

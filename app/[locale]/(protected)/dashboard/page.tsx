@@ -16,12 +16,18 @@ export default async function DashboardPage() {
 
   // Récupérer les statistiques
   const [hotelCount, quoteCount, stayCount, totalRevenue] = await Promise.all([
-    db.hotel.count(),
-    db.quote.count(),
-    db.stay.count({ where: { isActive: true } }),
+    db.hotel.count({ where: { organizationId: user.organizationId } }),
+    db.quote.count({
+      where: { stay: { organizationId: user.organizationId } },
+    }),
+    db.stay.count({
+      where: { isActive: true, organizationId: user.organizationId },
+    }),
     db.quote.aggregate({
       _sum: { totalPrice: true },
-      where: { status: "ACCEPTED" },
+      where: {
+        stay: { organizationId: user.organizationId },
+      },
     }),
   ]);
 
@@ -61,6 +67,11 @@ export default async function DashboardPage() {
     orderBy: { createdAt: "desc" },
     include: {
       stay: true,
+    },
+    where: {
+      stay: {
+        organizationId: user.organizationId,
+      },
     },
   });
 
@@ -172,19 +183,6 @@ export default async function DashboardPage() {
                 </p>
               )}
             </div>
-          </div>
-        </div>
-
-        {/* Graphiques à venir */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="h-5 w-5 text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-900">
-              {t("analytics")}
-            </h2>
-          </div>
-          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-            <p className="text-gray-500">{t("comingSoon")}</p>
           </div>
         </div>
       </Container>

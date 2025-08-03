@@ -5,9 +5,14 @@ import { RoomRepository } from '@/domain/ports/RoomRepository';
 export class PrismaRoomRepository implements RoomRepository {
   constructor(private prisma: PrismaClient) {}
 
-  async findById(id: string): Promise<Room | null> {
-    const room = await this.prisma.room.findUnique({
-      where: { id },
+  async findById(id: string, organizationId: string): Promise<Room | null> {
+    const room = await this.prisma.room.findFirst({
+      where: { 
+        id,
+        hotel: {
+          organizationId
+        }
+      },
     });
 
     if (!room) return null;
@@ -24,9 +29,14 @@ export class PrismaRoomRepository implements RoomRepository {
     );
   }
 
-  async findByHotelId(hotelId: string): Promise<Room[]> {
+  async findByHotelId(hotelId: string, organizationId: string): Promise<Room[]> {
     const rooms = await this.prisma.room.findMany({
-      where: { hotelId },
+      where: { 
+        hotelId,
+        hotel: {
+          organizationId
+        }
+      },
       orderBy: { name: 'asc' },
     });
 
@@ -45,8 +55,13 @@ export class PrismaRoomRepository implements RoomRepository {
     );
   }
 
-  async findAll(): Promise<Room[]> {
+  async findAllByOrganization(organizationId: string): Promise<Room[]> {
     const rooms = await this.prisma.room.findMany({
+      where: {
+        hotel: {
+          organizationId
+        }
+      },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -65,7 +80,7 @@ export class PrismaRoomRepository implements RoomRepository {
     );
   }
 
-  async save(room: Omit<Room, 'id' | 'createdAt' | 'updatedAt'>): Promise<Room> {
+  async save(room: Omit<Room, 'id' | 'createdAt' | 'updatedAt'>, organizationId: string): Promise<Room> {
     const created = await this.prisma.room.create({
       data: {
         hotelId: room.hotelId,
@@ -88,7 +103,13 @@ export class PrismaRoomRepository implements RoomRepository {
     );
   }
 
-  async update(id: string, room: Partial<Room>): Promise<Room> {
+  async update(id: string, room: Partial<Room>, organizationId: string): Promise<Room> {
+    // Vérifier que la chambre appartient à l'organisation
+    const existingRoom = await this.findById(id, organizationId);
+    if (!existingRoom) {
+      throw new Error('Room not found or access denied');
+    }
+    
     const updated = await this.prisma.room.update({
       where: { id },
       data: {
@@ -111,15 +132,26 @@ export class PrismaRoomRepository implements RoomRepository {
     );
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: string, organizationId: string): Promise<void> {
+    // Vérifier que la chambre appartient à l'organisation
+    const existingRoom = await this.findById(id, organizationId);
+    if (!existingRoom) {
+      throw new Error('Room not found or access denied');
+    }
+    
     await this.prisma.room.delete({
       where: { id },
     });
   }
 
-  async deleteByHotelId(hotelId: string): Promise<void> {
+  async deleteByHotelId(hotelId: string, organizationId: string): Promise<void> {
     await this.prisma.room.deleteMany({
-      where: { hotelId },
+      where: { 
+        hotelId,
+        hotel: {
+          organizationId
+        }
+      },
     });
   }
 }

@@ -74,7 +74,8 @@
         "calculate": "Calculer",
         "calculating": "Calcul...",
         "priceHint": "Cliquez sur Calculer pour obtenir une estimation basée sur les tarifs actuels",
-        "pricePerNight": "Prix moyen par personne et par nuit",
+        "pricePerPerson": "Prix par personne pour le séjour complet",
+        "priceForStay": "Pour un séjour de {nights} nuits",
         "priceCalculated": "Prix calculé",
         "priceCalculatedDesc": "Le prix total estimé est de {price}€",
         "acceptQuote": "Accepter le devis",
@@ -202,7 +203,7 @@
         "applyPrices": "Appliquer les tarifs",
         "pricingUpdateSuccess": "Tarifs mis à jour",
         "pricingUpdateSuccessDesc": "Les tarifs ont été mis à jour avec succès",
-        "pricingHelp": "Saisissez un prix pour chaque tranche d'âge que vous souhaitez configurer. Vous pouvez laisser vide les tranches d'âge non utilisées.",
+        "pricingHelp": "Saisissez le prix total par personne pour le séjour complet (pas le prix par nuit). Vous pouvez laisser vide les tranches d'âge non utilisées.",
         "pricingUpdateError": "Erreur",
         "pricingUpdateErrorDesc": "Une erreur est survenue lors de la mise à jour des tarifs"
     },
@@ -353,7 +354,7 @@
             "person": "personne",
             "specialRequests": "Demandes spéciales",
             "estimatedTotal": "Total estimé",
-            "priceNote": "Ce prix est une estimation basée sur les tarifs actuels",
+            "priceNote": "Ce prix est une estimation pour le séjour complet basée sur les tarifs actuels",
             "occupants": "Occupants",
             "totalOccupants": "Total occupants"
         }

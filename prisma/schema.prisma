@@ -17,8 +17,10 @@ model User {
   name                 String?
   nextQuotaRenewalDate DateTime?
   subscriptionDate     DateTime?
+  organizationId       String?
 
   subscription  Subscription?  @relation(fields: [subscriptionId], references: [id])
+  organization  Organization?  @relation(fields: [organizationId], references: [id])
   oauthAccounts OauthAccount[]
   magicLinks    MagicLink[]
   sessions      Session[]
@@ -135,20 +137,25 @@ model Organization {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
+  users       User[]
+  hotels      Hotel[]
+  ageRanges   AgeRange[]
   stays       Stay[]
 }
 
 model Hotel {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  address     String?
-  imageUrl    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(uuid())
+  name           String
+  description    String?
+  address        String?
+  imageUrl       String?
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
   
-  rooms       Room[]
-  stays       Stay[]
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  rooms          Room[]
+  stays          Stay[]
 }
 
 model Room {
@@ -167,16 +174,18 @@ model Room {
 }
 
 model AgeRange {
-  id          String   @id @default(uuid())
-  name        String   // Ex: "Adulte", "Enfant 3-12 ans", "Bébé"
-  minAge      Int?
-  maxAge      Int?
-  order       Int      @default(0) // Pour l'ordre d'affichage
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(uuid())
+  name           String   // Ex: "Adulte", "Enfant 3-12 ans", "Bébé"
+  minAge         Int?
+  maxAge         Int?
+  order          Int      @default(0) // Pour l'ordre d'affichage
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
   
-  roomPricings RoomPricing[]
-  quoteParticipants QuoteParticipant[]
+  organization       Organization @relation(fields: [organizationId], references: [id])
+  roomPricings       RoomPricing[]
+  quoteParticipants  QuoteParticipant[]
   quoteRoomOccupants QuoteRoomOccupant[]
 }
 

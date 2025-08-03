@@ -5,6 +5,24 @@ import { UserWithSubscription } from "@/types/user";
 import { logger } from "@/utils/logger";
 import { OauthAccount, User } from "@prisma/client";
 
+async function generateUniqueSlug(trx: any, baseSlug: string): Promise<string> {
+  let slug = baseSlug;
+  let counter = 1;
+  
+  while (true) {
+    const existing = await trx.organization.findUnique({
+      where: { slug },
+    });
+    
+    if (!existing) {
+      return slug;
+    }
+    
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+}
+
 export async function getAuthStatus(): Promise<{
   user: UserWithSubscription | null;
   subscription: any | null;
@@ -57,12 +75,24 @@ export const oauthUpsertUser = async (
       });
 
       if (!existingUser) {
+        // Créer une organisation pour le nouvel utilisateur
+        const organizationSlug = userData.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+        const uniqueSlug = await generateUniqueSlug(trx, organizationSlug);
+        
+        const organization = await trx.organization.create({
+          data: {
+            name: `Organisation de ${userData.name || userData.email}`,
+            slug: uniqueSlug,
+          },
+        });
+
         const newUser = await trx.user.create({
           data: {
             id: userData.id,
             email: userData.email,
             name: userData.name,
             profilePictureUrl: userData.picture,
+            organizationId: organization.id,
             oauthAccounts: {
               create: {
                 provider: "google",

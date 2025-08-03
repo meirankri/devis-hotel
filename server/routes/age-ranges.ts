@@ -9,14 +9,14 @@ import { AgeRange } from '@/domain/entities/AgeRange';
 const ageRangeRepository = new PrismaAgeRangeRepository(prisma);
 
 export const ageRangesRouter = router({
-  getAll: protectedProcedure.query(async () => {
-    return await ageRangeRepository.findAll();
+  getAll: protectedProcedure.query(async ({ ctx }) => {
+    return await ageRangeRepository.findAllByOrganization(ctx.organizationId);
   }),
 
   getById: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .query(async ({ input }) => {
-      const ageRange = await ageRangeRepository.findById(input.id);
+    .query(async ({ input, ctx }) => {
+      const ageRange = await ageRangeRepository.findById(input.id, ctx.organizationId);
       
       if (!ageRange) {
         throw new TRPCError({
@@ -30,9 +30,9 @@ export const ageRangesRouter = router({
 
   create: protectedProcedure
     .input(createAgeRangeSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const ageRangeData = AgeRange.create(input);
-      return await ageRangeRepository.save(ageRangeData);
+      return await ageRangeRepository.save(ageRangeData, ctx.organizationId);
     }),
 
   update: protectedProcedure
@@ -40,8 +40,8 @@ export const ageRangesRouter = router({
       id: z.string().uuid(),
       data: updateAgeRangeSchema,
     }))
-    .mutation(async ({ input }) => {
-      const ageRange = await ageRangeRepository.findById(input.id);
+    .mutation(async ({ input, ctx }) => {
+      const ageRange = await ageRangeRepository.findById(input.id, ctx.organizationId);
       if (!ageRange) {
         throw new TRPCError({
           code: 'NOT_FOUND',
@@ -51,7 +51,7 @@ export const ageRangesRouter = router({
 
       try {
         ageRange.update(input.data);
-        return await ageRangeRepository.update(input.id, input.data);
+        return await ageRangeRepository.update(input.id, input.data, ctx.organizationId);
       } catch (error) {
         if (error instanceof Error) {
           throw new TRPCError({
@@ -65,8 +65,8 @@ export const ageRangesRouter = router({
 
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ input }) => {
-      const ageRange = await ageRangeRepository.findById(input.id);
+    .mutation(async ({ input, ctx }) => {
+      const ageRange = await ageRangeRepository.findById(input.id, ctx.organizationId);
       if (!ageRange) {
         throw new TRPCError({
           code: 'NOT_FOUND',
@@ -74,7 +74,7 @@ export const ageRangesRouter = router({
         });
       }
 
-      await ageRangeRepository.delete(input.id);
+      await ageRangeRepository.delete(input.id, ctx.organizationId);
       return { success: true };
     }),
 });

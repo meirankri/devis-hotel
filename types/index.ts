@@ -19,6 +19,7 @@ export interface ExtendedUser extends User {
   profilePictureUrl: string;
   name: string;
   id: string;
+  organizationId?: string;
 }
 
 export interface GoogleUser {

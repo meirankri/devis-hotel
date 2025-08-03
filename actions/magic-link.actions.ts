@@ -7,6 +7,28 @@ import { sendEmail } from "@/lib/sendGrid";
 import { logger } from "@/utils/logger";
 import { addFreeTrialSubscription } from "@/lib/lucia/auth";
 import { verifyRecaptcha } from "@/utils/recaptcha";
+import { PrismaClient } from "@prisma/client";
+
+async function generateUniqueSlug(
+  trx: PrismaClient,
+  baseSlug: string
+): Promise<string> {
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (true) {
+    const existing = await trx.organization.findUnique({
+      where: { slug },
+    });
+
+    if (!existing) {
+      return slug;
+    }
+
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+}
 
 const generateMagicLink = async (email: string, userId: string) => {
   const token = jwt.sign({ email: email, userId }, process.env.JWT_SECRET!, {
@@ -57,9 +79,24 @@ export const signIn = async (values: z.infer<typeof SignInSchema>) => {
         html: `<div>click to sign up ${res.data.url}</div>`,
       });
     } else {
+      // Créer une organisation pour le nouvel utilisateur
+      const organizationSlug = values.email
+        .split("@")[0]
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
+      const uniqueSlug = await generateUniqueSlug(db, organizationSlug);
+
+      const organization = await db.organization.create({
+        data: {
+          name: `Organisation de ${values.email}`,
+          slug: uniqueSlug,
+        },
+      });
+
       const user = await db.user.create({
         data: {
           email: values.email,
+          organizationId: organization.id,
         },
       });
       const res = await generateMagicLink(values.email, user.id);

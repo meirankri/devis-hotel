@@ -1,13 +1,13 @@
-import { PrismaClient } from '@prisma/client';
-import { Hotel } from '@/domain/entities/Hotel';
-import { HotelRepository } from '@/domain/ports/HotelRepository';
+import { PrismaClient } from "@prisma/client";
+import { Hotel } from "@/domain/entities/Hotel";
+import { HotelRepository } from "@/domain/ports/HotelRepository";
 
 export class PrismaHotelRepository implements HotelRepository {
   constructor(private prisma: PrismaClient) {}
 
-  async findById(id: string): Promise<Hotel | null> {
-    const hotel = await this.prisma.hotel.findUnique({
-      where: { id },
+  async findById(id: string, organizationId: string): Promise<Hotel | null> {
+    const hotel = await this.prisma.hotel.findFirst({
+      where: { id, organizationId },
     });
 
     if (!hotel) return null;
@@ -23,13 +23,14 @@ export class PrismaHotelRepository implements HotelRepository {
     );
   }
 
-  async findAll(): Promise<Hotel[]> {
+  async findAllByOrganization(organizationId: string): Promise<Hotel[]> {
     const hotels = await this.prisma.hotel.findMany({
-      orderBy: { createdAt: 'desc' },
+      where: { organizationId },
+      orderBy: { createdAt: "desc" },
     });
 
     return hotels.map(
-      hotel =>
+      (hotel) =>
         new Hotel(
           hotel.id,
           hotel.name,
@@ -42,13 +43,17 @@ export class PrismaHotelRepository implements HotelRepository {
     );
   }
 
-  async save(hotel: Omit<Hotel, 'id' | 'createdAt' | 'updatedAt'>): Promise<Hotel> {
+  async save(
+    hotel: Omit<Hotel, "id" | "createdAt" | "updatedAt">,
+    organizationId: string
+  ): Promise<Hotel> {
     const created = await this.prisma.hotel.create({
       data: {
         name: hotel.name,
         description: hotel.description,
         address: hotel.address,
         imageUrl: hotel.imageUrl,
+        organizationId,
       },
     });
 
@@ -63,9 +68,9 @@ export class PrismaHotelRepository implements HotelRepository {
     );
   }
 
-  async update(id: string, hotel: Partial<Hotel>): Promise<Hotel> {
+  async update(id: string, hotel: Partial<Hotel>, organizationId: string): Promise<Hotel> {
     const updated = await this.prisma.hotel.update({
-      where: { id },
+      where: { id, organizationId },
       data: {
         name: hotel.name,
         description: hotel.description,
@@ -85,9 +90,9 @@ export class PrismaHotelRepository implements HotelRepository {
     );
   }
 
-  async delete(id: string): Promise<void> {
-    await this.prisma.hotel.delete({
-      where: { id },
+  async delete(id: string, organizationId: string): Promise<void> {
+    await this.prisma.hotel.deleteMany({
+      where: { id, organizationId },
     });
   }
 }

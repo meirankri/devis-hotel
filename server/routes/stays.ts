@@ -6,8 +6,9 @@ import { prisma } from '@/lib/database/db';
 import { Stay } from '@/domain/entities/Stay';
 
 export const staysRouter = router({
-  getAll: protectedProcedure.query(async () => {
+  getAll: protectedProcedure.query(async ({ ctx }) => {
     const stays = await prisma.stay.findMany({
+      where: { organizationId: ctx.organizationId },
       include: {
         hotel: true,
         organization: true,
@@ -32,9 +33,12 @@ export const staysRouter = router({
 
   getById: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .query(async ({ input }) => {
-      const stay = await prisma.stay.findUnique({
-        where: { id: String(input.id) },
+    .query(async ({ input, ctx }) => {
+      const stay = await prisma.stay.findFirst({
+        where: { 
+          id: String(input.id),
+          organizationId: ctx.organizationId
+        },
         include: {
           hotel: true,
           organization: true,
@@ -85,10 +89,13 @@ export const staysRouter = router({
 
   create: protectedProcedure
     .input(createStaySchema)
-    .mutation(async ({ input }) => {
-      // Vérifier que le slug est unique
+    .mutation(async ({ input, ctx }) => {
+      // Vérifier que le slug est unique au sein de l'organisation
       const existingStay = await prisma.stay.findFirst({
-        where: { slug: input.slug },
+        where: { 
+          slug: input.slug,
+          organizationId: ctx.organizationId
+        },
       });
 
       if (existingStay) {
@@ -98,25 +105,22 @@ export const staysRouter = router({
         });
       }
 
-      // Si pas d'organisation fournie, utiliser l'organisation par défaut
-      let organizationId = input.organizationId;
-      if (!organizationId) {
-        const defaultOrg = await prisma.organization.findFirst({
-          where: { slug: 'default' },
-        });
-        if (defaultOrg) {
-          organizationId = defaultOrg.id;
-        } else {
-          // Créer l'organisation par défaut si elle n'existe pas
-          const newDefaultOrg = await prisma.organization.create({
-            data: {
-              name: 'Organisation par défaut',
-              slug: 'default',
-              description: 'Organisation créée automatiquement',
-            },
-          });
-          organizationId = newDefaultOrg.id;
+      // Utiliser l'organisation de l'utilisateur connecté
+      const organizationId = ctx.organizationId;
+      
+      // Vérifier que l'hôtel appartient à l'organisation
+      const hotel = await prisma.hotel.findFirst({
+        where: {
+          id: input.hotelId,
+          organizationId: ctx.organizationId
         }
+      });
+      
+      if (!hotel) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Hôtel non trouvé ou accès refusé',
+        });
       }
 
       const stayData = Stay.create({
@@ -150,10 +154,13 @@ export const staysRouter = router({
       id: z.string().uuid(),
       data: updateStaySchema,
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const stayData = input.data as z.infer<typeof updateStaySchema>;
-      const existingStay = await prisma.stay.findUnique({
-        where: { id: String(input.id) },
+      const existingStay = await prisma.stay.findFirst({
+        where: { 
+          id: String(input.id),
+          organizationId: ctx.organizationId
+        },
       });
 
       if (!existingStay) {
@@ -166,7 +173,10 @@ export const staysRouter = router({
       // Vérifier l'unicité du slug si modifié
       if (stayData.slug && stayData.slug !== existingStay.slug) {
         const stayWithSlug = await prisma.stay.findFirst({
-          where: { slug: stayData.slug },
+          where: { 
+            slug: stayData.slug,
+            organizationId: ctx.organizationId
+          },
         });
 
         if (stayWithSlug) {
@@ -192,9 +202,12 @@ export const staysRouter = router({
 
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ input }) => {
-      const stay = await prisma.stay.findUnique({
-        where: { id: String(input.id) },
+    .mutation(async ({ input, ctx }) => {
+      const stay = await prisma.stay.findFirst({
+        where: { 
+          id: String(input.id),
+          organizationId: ctx.organizationId
+        },
       });
 
       if (!stay) {
@@ -213,9 +226,12 @@ export const staysRouter = router({
 
   toggleActive: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ input }) => {
-      const stay = await prisma.stay.findUnique({
-        where: { id: String(input.id) },
+    .mutation(async ({ input, ctx }) => {
+      const stay = await prisma.stay.findFirst({
+        where: { 
+          id: String(input.id),
+          organizationId: ctx.organizationId
+        },
       });
 
       if (!stay) {
