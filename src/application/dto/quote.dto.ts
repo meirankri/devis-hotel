@@ -12,6 +12,14 @@ export const createQuoteRequestSchema = z.object({
     ageRangeId: z.string().uuid(),
     count: z.number().int().min(0),
   })).min(1),
+  rooms: z.array(z.object({
+    roomId: z.string().uuid(),
+    quantity: z.number().int().min(1),
+    occupants: z.array(z.object({
+      ageRangeId: z.string().uuid(),
+      count: z.number().int().min(0),
+    })).optional(),
+  })).optional(),
   specialRequests: z.string().optional(),
 }).refine(
   data => {

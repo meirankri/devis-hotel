@@ -44,7 +44,7 @@ export const signIn = async (values: z.infer<typeof SignInSchema>) => {
 
     if (existedUser) {
       const res = await generateMagicLink(values.email, existedUser.id);
-      console.log(res);
+      console.log("res", res);
       await db.magicLink.create({
         data: {
           userId: existedUser.id,

@@ -12,11 +12,12 @@ import {
   createQuoteRequestSchema,
   type CreateQuoteRequestDto,
 } from "@/application/dto/quote.dto";
-import { Calendar, Users, Plus, Minus, Mail, Phone, User } from "lucide-react";
+import { Calendar, Users, Plus, Minus, Mail, Phone, User, Home, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
 import { useLocale } from "next-intl";
 import { toast } from "@/components/ui/use-toast";
+import { useRouter } from "next/navigation";
 
 interface QuoteFormProps {
   stay: any;
@@ -27,6 +28,8 @@ export function QuoteForm({ stay }: QuoteFormProps) {
   const locale = useLocale();
   const dateLocale = locale === "fr" ? fr : enUS;
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedQuoteId, setSubmittedQuoteId] = useState<string | null>(null);
+  const router = useRouter();
 
   const ageRanges = useMemo(
     () =>
@@ -60,6 +63,10 @@ export function QuoteForm({ stay }: QuoteFormProps) {
         ageRangeId: ar.id,
         count: 0,
       })),
+      rooms: stay.hotel.rooms.map((room: any) => ({
+        roomId: room.id,
+        quantity: 0,
+      })),
       specialRequests: "",
     },
   });
@@ -68,20 +75,30 @@ export function QuoteForm({ stay }: QuoteFormProps) {
     control,
     name: "participants",
   });
+  
+  const { fields: roomFields } = useFieldArray({
+    control,
+    name: "rooms",
+  });
 
   const participants = watch("participants");
+  const rooms = watch("rooms") || [];
   const totalParticipants = participants.reduce(
     (sum: number, p: any) => sum + p.count,
     0
   );
+  const totalRooms = rooms.reduce(
+    (sum: number, r: any) => sum + r.quantity,
+    0
+  );
 
   const createQuote = trpc.quotes.createPublic.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: t("successTitle"),
         description: t("successMessage"),
       });
-      // Reset form ou redirect
+      setSubmittedQuoteId(data.id);
     },
     onError: (error) => {
       toast({
@@ -115,6 +132,76 @@ export function QuoteForm({ stay }: QuoteFormProps) {
     };
     register(`participants.${index}.count`).onChange(event);
   };
+  
+  const updateRoomQuantity = (index: number, delta: number) => {
+    const currentQuantity = rooms[index]?.quantity || 0;
+    const newQuantity = Math.max(0, currentQuantity + delta);
+    const event = {
+      target: {
+        name: `rooms.${index}.quantity`,
+        value: newQuantity,
+      },
+    };
+    register(`rooms.${index}.quantity`).onChange(event);
+  };
+
+  // Si un devis a été soumis avec succès, afficher le conteneur avec le bouton PDF
+  if (submittedQuoteId) {
+    return (
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4 max-w-3xl">
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <div className="text-center space-y-6">
+              <div className="text-green-600 mb-4">
+                <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                </svg>
+              </div>
+              
+              <h2 className="text-3xl font-bold text-gray-900">
+                {t("quoteSuccess")}
+              </h2>
+              
+              <p className="text-lg text-gray-600">
+                {t("quoteSuccessDescription")}
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+                <Button
+                  variant="outline"
+                  onClick={() => router.push(`/${locale}/quotes/${submittedQuoteId}`)}
+                  className="flex items-center gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  {t("viewQuote")}
+                </Button>
+                
+                <Button
+                  onClick={() => window.open(`/api/quotes/${submittedQuoteId}/pdf`, '_blank')}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 flex items-center gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  {t("downloadPDF")}
+                </Button>
+              </div>
+              
+              <Button
+                variant="link"
+                onClick={() => {
+                  setSubmittedQuoteId(null);
+                  // Reset form
+                  window.location.reload();
+                }}
+                className="mt-4"
+              >
+                {t("newQuote")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-16 bg-gray-50">
@@ -243,6 +330,74 @@ export function QuoteForm({ stay }: QuoteFormProps) {
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* Sélection des chambres */}
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                <Home className="h-5 w-5" />
+                {t("roomSelection")}
+              </h3>
+
+              <div className="space-y-3">
+                {stay.hotel.rooms.map((room: any, index: number) => (
+                  <div
+                    key={room.id}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{room.name}</p>
+                      <p className="text-sm text-gray-600">
+                        {t("capacity")}: {room.capacity} {t("persons")}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => updateRoomQuantity(index, -1)}
+                        disabled={!rooms[index] || rooms[index].quantity === 0}
+                        aria-label={`Reduce ${room.name} quantity`}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+
+                      <input
+                        type="hidden"
+                        {...register(`rooms.${index}.roomId`)}
+                        value={room.id}
+                      />
+                      <Input
+                        type="number"
+                        {...register(`rooms.${index}.quantity`, {
+                          valueAsNumber: true,
+                        })}
+                        className="w-16 text-center"
+                        min="0"
+                        readOnly
+                      />
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => updateRoomQuantity(index, 1)}
+                        aria-label={`Increase ${room.name} quantity`}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {totalRooms > 0 && (
+                <p className="text-sm text-gray-600 text-center">
+                  {t("totalRooms")}: {totalRooms}
+                </p>
+              )}
             </div>
 
             {/* Participants */}

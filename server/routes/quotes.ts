@@ -54,6 +54,24 @@ export const quotesRouter = router({
               ageRange: true,
             },
           },
+          quoteRooms: {
+            include: {
+              room: {
+                include: {
+                  roomPricings: {
+                    include: {
+                      ageRange: true,
+                    },
+                  },
+                },
+              },
+              quoteRoomOccupants: {
+                include: {
+                  ageRange: true,
+                },
+              },
+            },
+          },
         },
       });
 
@@ -150,9 +168,62 @@ export const quotesRouter = router({
         },
       });
 
+      // Créer les chambres et leurs occupants si fournis
+      if (input.rooms && input.rooms.length > 0) {
+        for (const room of input.rooms) {
+          const quoteRoom = await prisma.quoteRoom.create({
+            data: {
+              quoteId: quote.id,
+              roomId: room.roomId,
+              quantity: room.quantity,
+            },
+          });
+
+          // Créer les occupants pour cette chambre si fournis
+          if (room.occupants && room.occupants.length > 0) {
+            await prisma.quoteRoomOccupant.createMany({
+              data: room.occupants
+                .filter(o => o.count > 0)
+                .map(o => ({
+                  quoteRoomId: quoteRoom.id,
+                  ageRangeId: o.ageRangeId,
+                  count: o.count,
+                })),
+            });
+          }
+        }
+      }
+
+      // Récupérer le devis complet avec toutes les relations
+      const completeQuote = await prisma.quote.findUnique({
+        where: { id: quote.id },
+        include: {
+          stay: {
+            include: {
+              hotel: true,
+            },
+          },
+          quoteParticipants: {
+            include: {
+              ageRange: true,
+            },
+          },
+          quoteRooms: {
+            include: {
+              room: true,
+              quoteRoomOccupants: {
+                include: {
+                  ageRange: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
       // TODO: Envoyer un email de confirmation
 
-      return quote;
+      return completeQuote;
     }),
 
   updateStatus: protectedProcedure

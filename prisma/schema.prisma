@@ -126,6 +126,18 @@ model Document {
 
 // Modèles pour la gestion des séjours
 
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  stays       Stay[]
+}
+
 model Hotel {
   id          String   @id @default(uuid())
   name        String
@@ -151,6 +163,7 @@ model Room {
   
   hotel         Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
   roomPricings  RoomPricing[]
+  quoteRooms    QuoteRoom[]
 }
 
 model AgeRange {
@@ -164,6 +177,7 @@ model AgeRange {
   
   roomPricings RoomPricing[]
   quoteParticipants QuoteParticipant[]
+  quoteRoomOccupants QuoteRoomOccupant[]
 }
 
 model RoomPricing {
@@ -183,11 +197,12 @@ model RoomPricing {
 model Stay {
   id                    String   @id @default(uuid())
   name                  String   // Ex: "Pessah 2024", "Été 2024"
-  slug                  String   @unique // Pour l'URL publique
+  slug                  String   // Pour l'URL publique
   description           String?
   startDate             DateTime
   endDate               DateTime
   hotelId               String
+  organizationId        String?
   allowPartialBooking   Boolean  @default(false) // Permet réservation partielle
   minDays               Int?     // Nombre minimum de jours si partielle
   maxDays               Int?     // Nombre maximum de jours
@@ -196,8 +211,11 @@ model Stay {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   
-  hotel                 Hotel    @relation(fields: [hotelId], references: [id])
+  hotel                 Hotel         @relation(fields: [hotelId], references: [id])
+  organization          Organization?  @relation(fields: [organizationId], references: [id])
   quotes                Quote[]
+  
+  @@unique([organizationId, slug])
 }
 
 model Quote {
@@ -218,6 +236,7 @@ model Quote {
   
   stay              Stay         @relation(fields: [stayId], references: [id])
   quoteParticipants QuoteParticipant[]
+  quoteRooms        QuoteRoom[]
 }
 
 model QuoteParticipant {
@@ -230,6 +249,30 @@ model QuoteParticipant {
   ageRange    AgeRange @relation(fields: [ageRangeId], references: [id])
   
   @@unique([quoteId, ageRangeId])
+}
+
+model QuoteRoom {
+  id          String   @id @default(uuid())
+  quoteId     String
+  roomId      String
+  quantity    Int      @default(1) // Nombre de chambres de ce type
+  
+  quote       Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  room        Room     @relation(fields: [roomId], references: [id])
+  quoteRoomOccupants QuoteRoomOccupant[]
+  
+}
+
+model QuoteRoomOccupant {
+  id          String   @id @default(uuid())
+  quoteRoomId String
+  ageRangeId  String
+  count       Int      // Nombre de personnes de cette tranche d'âge dans cette chambre
+  
+  quoteRoom   QuoteRoom @relation(fields: [quoteRoomId], references: [id], onDelete: Cascade)
+  ageRange    AgeRange  @relation(fields: [ageRangeId], references: [id])
+  
+  @@unique([quoteRoomId, ageRangeId])
 }
 
 enum QuoteStatus {

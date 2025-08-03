@@ -10,6 +10,7 @@ export const staysRouter = router({
     const stays = await prisma.stay.findMany({
       include: {
         hotel: true,
+        organization: true,
       },
       orderBy: { startDate: 'desc' },
     });
@@ -22,6 +23,7 @@ export const staysRouter = router({
       where: { isActive: true },
       include: {
         hotel: true,
+        organization: true,
       },
       orderBy: { startDate: 'asc' },
     });
@@ -35,6 +37,7 @@ export const staysRouter = router({
         where: { id: String(input.id) },
         include: {
           hotel: true,
+          organization: true,
         },
       });
 
@@ -51,7 +54,7 @@ export const staysRouter = router({
   getBySlug: publicProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ input }) => {
-      const stay = await prisma.stay.findUnique({
+      const stay = await prisma.stay.findFirst({
         where: { slug: input.slug },
         include: {
           hotel: {
@@ -84,7 +87,7 @@ export const staysRouter = router({
     .input(createStaySchema)
     .mutation(async ({ input }) => {
       // Vérifier que le slug est unique
-      const existingStay = await prisma.stay.findUnique({
+      const existingStay = await prisma.stay.findFirst({
         where: { slug: input.slug },
       });
 
@@ -93,6 +96,27 @@ export const staysRouter = router({
           code: 'CONFLICT',
           message: 'Un séjour avec ce slug existe déjà',
         });
+      }
+
+      // Si pas d'organisation fournie, utiliser l'organisation par défaut
+      let organizationId = input.organizationId;
+      if (!organizationId) {
+        const defaultOrg = await prisma.organization.findFirst({
+          where: { slug: 'default' },
+        });
+        if (defaultOrg) {
+          organizationId = defaultOrg.id;
+        } else {
+          // Créer l'organisation par défaut si elle n'existe pas
+          const newDefaultOrg = await prisma.organization.create({
+            data: {
+              name: 'Organisation par défaut',
+              slug: 'default',
+              description: 'Organisation créée automatiquement',
+            },
+          });
+          organizationId = newDefaultOrg.id;
+        }
       }
 
       const stayData = Stay.create({
@@ -109,6 +133,7 @@ export const staysRouter = router({
           startDate: stayData.startDate,
           endDate: stayData.endDate,
           hotelId: stayData.hotelId,
+          organizationId: organizationId,
           allowPartialBooking: stayData.allowPartialBooking,
           minDays: stayData.minDays,
           maxDays: stayData.maxDays,
@@ -140,7 +165,7 @@ export const staysRouter = router({
 
       // Vérifier l'unicité du slug si modifié
       if (stayData.slug && stayData.slug !== existingStay.slug) {
-        const stayWithSlug = await prisma.stay.findUnique({
+        const stayWithSlug = await prisma.stay.findFirst({
           where: { slug: stayData.slug },
         });
 

@@ -8,6 +8,7 @@ const baseStaySchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format de date invalide (YYYY-MM-DD)'),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format de date invalide (YYYY-MM-DD)'),
   hotelId: z.string().uuid('ID d\'hôtel invalide'),
+  organizationId: z.string().uuid('ID d\'organisation invalide').optional(),
   allowPartialBooking: z.boolean().default(false),
   minDays: z.number().int().positive().optional(),
   maxDays: z.number().int().positive().optional(),

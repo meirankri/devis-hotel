@@ -1,18 +1,27 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { trpc } from '@/app/_trpc/client';
-import { Button } from '@/components/ui/button';
-import { Plus, Edit2, Trash2, Building2, MapPin, Bed } from 'lucide-react';
-import { HotelForm } from './HotelForm';
-import { toast } from '@/components/ui/use-toast';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Hotel } from '@/domain/entities/Hotel';
+import { useState } from "react";
+import { useTranslations } from "next-intl";
+import { trpc } from "@/app/_trpc/client";
+import { Button } from "@/components/ui/button";
+import { Plus, Edit2, Trash2, Building2, MapPin, Bed } from "lucide-react";
+import { HotelForm } from "./HotelForm";
+import { toast } from "@/components/ui/use-toast";
+import Link from "next/link";
+import Image from "next/image";
+
+type HotelData = {
+  id: string;
+  name: string;
+  description: string | null;
+  address: string | null;
+  imageUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export function HotelsList() {
-  const t = useTranslations('Hotels');
+  const t = useTranslations("Hotels");
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -20,22 +29,22 @@ export function HotelsList() {
   const deleteHotel = trpc.hotels.delete.useMutation({
     onSuccess: () => {
       toast({
-        title: t('deleteSuccess'),
-        description: t('deleteSuccessDesc'),
+        title: t("deleteSuccess"),
+        description: t("deleteSuccessDesc"),
       });
       refetch();
     },
     onError: () => {
       toast({
-        title: t('deleteError'),
-        description: t('deleteErrorDesc'),
-        variant: 'destructive',
+        title: t("deleteError"),
+        description: t("deleteErrorDesc"),
+        variant: "destructive",
       });
     },
   });
 
   const handleDelete = async (id: string) => {
-    if (confirm(t('confirmDelete'))) {
+    if (confirm(t("confirmDelete"))) {
       await deleteHotel.mutateAsync({ id });
     }
   };
@@ -52,19 +61,19 @@ export function HotelsList() {
     <div>
       {!isCreating && (
         <div className="mb-8 flex justify-end">
-          <Button 
+          <Button
             onClick={() => setIsCreating(true)}
             className="bg-blue-600 hover:bg-blue-700"
           >
             <Plus className="mr-2 h-4 w-4" />
-            {t('addHotel')}
+            {t("addHotel")}
           </Button>
         </div>
       )}
 
       {isCreating && (
         <div className="mb-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold mb-6">{t('newHotel')}</h2>
+          <h2 className="text-xl font-semibold mb-6">{t("newHotel")}</h2>
           <HotelForm
             onSuccess={() => {
               setIsCreating(false);
@@ -76,7 +85,7 @@ export function HotelsList() {
       )}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {hotels?.map((hotel: Hotel) => (
+        {hotels?.map((hotel: HotelData) => (
           <div key={hotel.id} className="group relative">
             {editingId === hotel.id ? (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -104,7 +113,7 @@ export function HotelsList() {
                       <Building2 className="h-16 w-16 text-gray-400" />
                     </div>
                   )}
-                  
+
                   {/* Actions flottantes */}
                   <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
@@ -125,30 +134,30 @@ export function HotelsList() {
                     </Button>
                   </div>
                 </div>
-                
+
                 <div className="p-6">
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
                     {hotel.name}
                   </h3>
-                  
+
                   {hotel.description && (
-                    <div 
+                    <div
                       className="text-sm text-gray-600 mb-3 line-clamp-2"
                       dangerouslySetInnerHTML={{ __html: hotel.description }}
                     />
                   )}
-                  
+
                   {hotel.address && (
                     <div className="flex items-center gap-1 text-sm text-gray-500 mb-4">
                       <MapPin className="h-4 w-4" />
                       <span className="line-clamp-1">{hotel.address}</span>
                     </div>
                   )}
-                  
-                  <Link href={`/hotels/${hotel.id}/rooms`}>
+
+                  <Link href={`/dashboard/hotels/${hotel.id}/rooms`}>
                     <Button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
                       <Bed className="mr-2 h-4 w-4" />
-                      {t('manageRooms')}
+                      {t("manageRooms")}
                     </Button>
                   </Link>
                 </div>
@@ -162,17 +171,15 @@ export function HotelsList() {
         <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
           <Building2 className="mx-auto h-16 w-16 text-gray-400 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {t('noHotels')}
+            {t("noHotels")}
           </h3>
-          <p className="text-gray-500 mb-6">
-            {t('noHotelsDesc')}
-          </p>
-          <Button 
+          <p className="text-gray-500 mb-6">{t("noHotelsDesc")}</p>
+          <Button
             onClick={() => setIsCreating(true)}
             className="bg-blue-600 hover:bg-blue-700"
           >
             <Plus className="mr-2 h-4 w-4" />
-            {t('addHotel')}
+            {t("addHotel")}
           </Button>
         </div>
       )}

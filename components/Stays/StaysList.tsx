@@ -148,7 +148,7 @@ export function StaysList() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
                       <Link
-                        href={`/${stay.slug}`}
+                        href={`/${stay.organization?.slug || 'default'}/${stay.slug}`}
                         target="_blank"
                         className="text-white hover:text-gray-200 transition-colors"
                       >
@@ -244,7 +244,7 @@ export function StaysList() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">{t("url")}:</span>
                       <span className="font-mono text-xs text-indigo-600">
-                        /{stay.slug}
+                        /{stay.organization?.slug || 'default'}/{stay.slug}
                       </span>
                     </div>
                   </div>

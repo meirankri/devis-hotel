@@ -9,12 +9,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
 import { createHotelSchema, type CreateHotelDto } from '@/application/dto/hotel.dto';
-import { Hotel } from '@/domain/entities/Hotel';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
+type HotelData = {
+  id: string;
+  name: string;
+  description: string | null;
+  address: string | null;
+  imageUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 interface HotelFormProps {
-  hotel?: Hotel;
+  hotel?: HotelData;
   onSuccess: () => void;
   onCancel: () => void;
 }
