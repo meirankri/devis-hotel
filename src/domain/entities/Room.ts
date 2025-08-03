@@ -27,6 +27,9 @@ export class Room {
       description: params.description ?? null,
       capacity: params.capacity,
       imageUrl: params.imageUrl ?? null,
+      update: function() {
+        throw new Error('Cannot update an unsaved Room');
+      }
     };
   }
 

@@ -127,7 +127,7 @@ const Pricing = () => {
                 link={link}
                 packageName={t(`pricing.${planTitle}`)}
                 currency={currency}
-                price={isMonthly ? price : monthlyEquivalent}
+                price={isMonthly ? price : (monthlyEquivalent || price)}
                 duration={t(`pricing.${timeline}`)}
                 subtitle={t(`pricing.${description}`)}
                 buttonText={t("pricing.choosePlan")}

@@ -45,12 +45,12 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ received: true });
-  } catch (err: any) {
+  } catch (err) {
     logger({
       message: "Failed to handle stripe webhook",
       context: err,
     });
-    return NextResponse.json({ error: err.message }, { status: 400 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : "An error occurred" }, { status: 400 });
   }
 }
 
@@ -70,12 +70,10 @@ async function handleCheckoutSessionCompleted(session: Stripe.Subscription) {
 
   const plan = pricingPlanByPriceId(priceId);
 
-  if (customer.deleted !== true) {
-    if (typeof customer === "object" && customer.email) {
-      await updateOrCreateUser(customer.email, customerId, priceId, plan);
-    } else {
-      console.error("Invalid customer data");
-    }
+  if (typeof customer === "object" && "email" in customer && customer.email) {
+    await updateOrCreateUser(customer.email, customerId, priceId, plan);
+  } else {
+    console.error("Invalid customer data");
   }
 }
 
@@ -91,7 +89,7 @@ async function updateOrCreateUser(
     },
   });
 
-  if (isEmpty(existingUser)) {
+  if (!existingUser) {
     const userId = generateId(15);
     await createNewUser(userId, email, customerId, priceId, plan);
   } else {
@@ -107,14 +105,18 @@ async function createNewUser(
   plan: PricingPlan
 ): Promise<void> {
   await db.$transaction(async (trx) => {
-    const subscription: SubscriptionWithProducts =
-      await trx.subscription.findFirst({
-        where: {
-          planTitle: plan.planTitle,
-          timeline: plan.stripeTimeline,
-        },
-        include: { products: true },
-      });
+    const subscription = await trx.subscription.findFirst({
+      where: {
+        planTitle: plan.planTitle,
+        timeline: plan.stripeTimeline,
+      },
+      include: { products: true },
+    });
+    
+    if (!subscription) {
+      throw new Error(`Subscription not found for plan: ${plan.planTitle}`);
+    }
+    
     const now = new Date();
 
     await trx.user.create({
@@ -146,14 +148,17 @@ async function updateExistingUser(
   plan: PricingPlan
 ): Promise<void> {
   await db.$transaction(async (trx) => {
-    const subscription: SubscriptionWithProducts =
-      await trx.subscription.findFirst({
-        where: {
-          planTitle: plan.planTitle,
-          timeline: plan.stripeTimeline,
-        },
-        include: { products: true },
-      });
+    const subscription = await trx.subscription.findFirst({
+      where: {
+        planTitle: plan.planTitle,
+        timeline: plan.stripeTimeline,
+      },
+      include: { products: true },
+    });
+    
+    if (!subscription) {
+      throw new Error(`Subscription not found for plan: ${plan.planTitle}`);
+    }
 
     await trx.productUsage.deleteMany({
       where: { userId },

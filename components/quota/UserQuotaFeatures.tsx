@@ -31,7 +31,7 @@ const UserQuotaFeatures = () => {
           key={index}
           className="flex justify-between items-center text-xs mb-1"
         >
-          <span className="">{formatLabel(quota.product.name)}</span>
+          <span className="">{formatLabel(quota.product?.name || '')}</span>
           <span className="font-medium text-blue-600">{quota.remaining}</span>
         </div>
       ))}

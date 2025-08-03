@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
 import { logger } from "@/utils/logger";
+import { UserWithSubscription } from "@/types/user";
+
+interface AuthStatus {
+  user: UserWithSubscription | null;
+  subscription: UserWithSubscription['subscription'] | null;
+}
 
 export default function useAuthAndSubscription() {
-  const [user, setUser] = useState(null);
-  const [subscription, setSubscription] = useState(null);
+  const [user, setUser] = useState<UserWithSubscription | null>(null);
+  const [subscription, setSubscription] = useState<UserWithSubscription['subscription'] | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

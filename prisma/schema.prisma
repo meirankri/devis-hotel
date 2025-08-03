@@ -151,7 +151,6 @@ model Room {
   
   hotel         Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
   roomPricings  RoomPricing[]
-  quoteRooms    QuoteRoom[]
 }
 
 model AgeRange {
@@ -164,7 +163,7 @@ model AgeRange {
   updatedAt   DateTime @updatedAt
   
   roomPricings RoomPricing[]
-  quoteDetails QuoteDetail[]
+  quoteParticipants QuoteParticipant[]
 }
 
 model RoomPricing {
@@ -203,53 +202,39 @@ model Stay {
 
 model Quote {
   id                String       @id @default(uuid())
+  quoteNumber       String       @unique
   stayId            String
   firstName         String
   lastName          String
   email             String
-  phone             String?
-  requestCallback   Boolean      @default(false)
-  totalPrice        Decimal
-  numberOfDays      Int
-  checkInDate       DateTime?
-  checkOutDate      DateTime?
+  phone             String
+  checkIn           DateTime
+  checkOut          DateTime
+  specialRequests   String?
   status            QuoteStatus  @default(PENDING)
-  notes             String?
+  totalPrice        Decimal?     // Calculé après validation par l'admin
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
   
   stay              Stay         @relation(fields: [stayId], references: [id])
-  quoteRooms        QuoteRoom[]
-  quoteDetails      QuoteDetail[]
+  quoteParticipants QuoteParticipant[]
 }
 
-model QuoteRoom {
-  id          String   @id @default(uuid())
-  quoteId     String
-  roomId      String
-  quantity    Int      @default(1) // Nombre de chambres de ce type
-  
-  quote       Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
-  room        Room     @relation(fields: [roomId], references: [id])
-  
-  @@unique([quoteId, roomId])
-}
-
-model QuoteDetail {
+model QuoteParticipant {
   id          String   @id @default(uuid())
   quoteId     String
   ageRangeId  String
-  quantity    Int      // Nombre de personnes pour cette tranche d'âge
-  unitPrice   Decimal  // Prix unitaire au moment du devis
-  totalPrice  Decimal  // Prix total pour cette ligne
+  count       Int      // Nombre de personnes pour cette tranche d'âge
   
   quote       Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
   ageRange    AgeRange @relation(fields: [ageRangeId], references: [id])
+  
+  @@unique([quoteId, ageRangeId])
 }
 
 enum QuoteStatus {
   PENDING
-  CONTACTED
-  CONFIRMED
-  CANCELLED
+  ACCEPTED
+  REJECTED
+  EXPIRED
 }

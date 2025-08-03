@@ -26,6 +26,9 @@ export class AgeRange {
       minAge: params.minAge ?? null,
       maxAge: params.maxAge ?? null,
       order: params.order ?? 0,
+      update: function() {
+        throw new Error('Cannot update an unsaved AgeRange');
+      }
     };
   }
 

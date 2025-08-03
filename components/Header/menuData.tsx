@@ -27,5 +27,26 @@ const menuData: Menu[] = [
     newTab: false,
     userOnly: true,
   },
+  {
+    id: 5,
+    title: "ageRanges",
+    path: "/age-ranges",
+    newTab: false,
+    userOnly: true,
+  },
+  {
+    id: 6,
+    title: "stays",
+    path: "/stays",
+    newTab: false,
+    userOnly: true,
+  },
+  {
+    id: 7,
+    title: "quotes",
+    path: "/quotes",
+    newTab: false,
+    userOnly: true,
+  },
 ];
 export default menuData;

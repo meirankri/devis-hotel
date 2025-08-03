@@ -49,7 +49,7 @@ export const protectRoute = async (): Promise<{
   };
 };
 
-export const getCurrentUser = async (): Promise<ExtendedUser> => {
+export const getCurrentUser = async (): Promise<ExtendedUser | null> => {
   const { user } = await validateSession();
   return user;
 };

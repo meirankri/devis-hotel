@@ -47,10 +47,10 @@ export const oauthUpsertUser = async (
   refreshToken: string | undefined
 ): Promise<string> => {
   try {
-    let user: User & {
-      oauthAccounts: OauthAccount[];
-    };
-    await db.$transaction(async (trx) => {
+    const result = await db.$transaction(async (trx) => {
+      let user: User & {
+        oauthAccounts: OauthAccount[];
+      };
       const existingUser = await trx.user.findFirst({
         where: { email: userData.email },
         include: { oauthAccounts: true },
@@ -108,8 +108,11 @@ export const oauthUpsertUser = async (
         },
         include: { oauthAccounts: true },
       });
+      
+      return user;
     });
-    return user.id;
+    
+    return result.id;
   } catch (error) {
     logger({
       message: "Error during OAuth user upsert",

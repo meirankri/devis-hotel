@@ -22,7 +22,7 @@ export default function HasAuthorization({
     return;
   }
 
-  if (!plans.includes(subscription?.subscriptionPlan)) {
+  if (!subscription || !plans.includes(subscription.planTitle)) {
     return;
   }
 

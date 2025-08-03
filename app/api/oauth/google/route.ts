@@ -73,6 +73,10 @@ export const GET = async (req: NextRequest) => {
     const { code } = validatedRequest;
     const codeVerifier = (await cookies()).get("codeVerifier")?.value;
 
+    if (!codeVerifier) {
+      return Response.json({ error: "Missing code verifier" }, { status: 400 });
+    }
+
     const { accessToken, accessTokenExpiresAt, refreshToken } =
       await google.validateAuthorizationCode(code, codeVerifier);
 
@@ -83,7 +87,7 @@ export const GET = async (req: NextRequest) => {
         googleData,
         accessToken,
         accessTokenExpiresAt,
-        refreshToken
+        refreshToken || undefined
       );
     } catch (error) {
       logger({
@@ -104,13 +108,13 @@ export const GET = async (req: NextRequest) => {
         status: 302,
       }
     );
-  } catch (error: any) {
+  } catch (error) {
     logger({
       message: "Failed to sign in with Google",
       context: error,
     }).error();
     return Response.json(
-      { error: error.message },
+      { error: error instanceof Error ? error.message : "Une erreur est survenue" },
       {
         status: 500,
       }

@@ -54,7 +54,7 @@ export const GET = async (req: NextRequest) => {
       method: "GET",
     });
 
-    const githubData = (await githubRes.json()) as any;
+    const githubData = (await githubRes.json()) as GitHubData;
 
     await handleGitHubAuth(githubData, accessToken);
 
@@ -79,13 +79,13 @@ export const GET = async (req: NextRequest) => {
         status: 302,
       }
     );
-  } catch (error: any) {
+  } catch (error) {
     logger({
       message: "Failed to sign in with GitHub",
       context: error,
     }).error();
     return Response.json(
-      { error: error.message },
+      { error: error instanceof Error ? error.message : "Une erreur est survenue" },
       {
         status: 500,
       }
@@ -93,12 +93,12 @@ export const GET = async (req: NextRequest) => {
   }
 };
 
-type GitHubData = {
+interface GitHubData {
   id: string;
   email: string;
   name: string;
   avatar_url: string;
-};
+}
 
 async function handleGitHubAuth(githubData: GitHubData, accessToken: string) {
   try {
@@ -157,7 +157,7 @@ async function handleGitHubAuth(githubData: GitHubData, accessToken: string) {
       context: error,
     }).error();
     return Response.json(
-      { error: error.message },
+      { error: error instanceof Error ? error.message : "Une erreur est survenue" },
       {
         status: 500,
       }

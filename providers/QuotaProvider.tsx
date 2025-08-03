@@ -147,13 +147,15 @@ export function QuotaProvider({ children }: { children: React.ReactNode }) {
   const updateQuota = useCallback((productName: string, remaining: number) => {
     setQuotas((prevQuotas) =>
       prevQuotas.map((quota) =>
-        quota.product.name === productName ? { ...quota, remaining } : quota
+        quota.product?.name === productName ? { ...quota, remaining } : quota
       )
     );
   }, []);
 
   useEffect(() => {
-    updateQuota(state.productName, state.remaining);
+    if (state.productName) {
+      updateQuota(state.productName, state.remaining);
+    }
   }, [updateQuota, state.productName, state.remaining]);
 
   const setUserIdAndProductName = useCallback(

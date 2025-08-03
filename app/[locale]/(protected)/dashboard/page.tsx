@@ -1,53 +1,191 @@
-import HasAuthorizationServer from "@/components/auth/HasAutorizationServer";
-import IsForbidenServer from "@/components/auth/IsForbidenServer";
-import ProductPage from "@/components/TestGeneration";
-import UserQuotaFeatures from "@/components/quota/UserQuotaFeatures";
-import { FileUploadWrapper } from "@/components/FileUpload/FileUploadWrapper";
-import { FileList } from "@/components/FileList/FileList";
-import { db } from "@/lib/database/db";
-import { validateSession } from "@/lib/lucia";
-import { redirect } from "next/navigation";
+import { getTranslations } from 'next-intl/server';
+import { validateSession } from '@/lib/lucia';
+import { db } from '@/lib/database/db';
+import { Hotel, Users, Calendar, TrendingUp, Euro } from 'lucide-react';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
-export default async function Home() {
+export default async function DashboardPage() {
+  const t = await getTranslations('Dashboard');
   const { user } = await validateSession();
+
   if (!user) {
     redirect("/sign-in");
   }
 
-  // Récupérer les documents de l'utilisateur
-  const documents = await db.document.findMany({
-    where: {
-      createdBy: user.id,
+  // Récupérer les statistiques
+  const [hotelCount, quoteCount, stayCount, totalRevenue] = await Promise.all([
+    db.hotel.count(),
+    db.quote.count(),
+    db.stay.count({ where: { isActive: true } }),
+    db.quote.aggregate({
+      _sum: { totalPrice: true },
+      where: { status: 'ACCEPTED' }
+    })
+  ]);
+
+  const stats = [
+    {
+      title: t('hotels'),
+      value: hotelCount,
+      icon: Hotel,
+      color: 'bg-blue-500',
+      href: '/hotels',
     },
-    orderBy: {
-      createdAt: "desc",
+    {
+      title: t('quotes'),
+      value: quoteCount,
+      icon: Users,
+      color: 'bg-green-500',
+      href: '/quotes',
+    },
+    {
+      title: t('activeStays'),
+      value: stayCount,
+      icon: Calendar,
+      color: 'bg-purple-500',
+      href: '/stays',
+    },
+    {
+      title: t('revenue'),
+      value: `${totalRevenue._sum.totalPrice?.toNumber() || 0}€`,
+      icon: Euro,
+      color: 'bg-orange-500',
+      href: '/quotes?status=confirmed',
+    },
+  ];
+
+  const recentQuotes = await db.quote.findMany({
+    take: 5,
+    orderBy: { createdAt: 'desc' },
+    include: {
+      stay: true,
     },
   });
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <HasAuthorizationServer plans={["Premium"]}>
-        <div className="bg-red-500 p-4">This is a premium content</div>
-      </HasAuthorizationServer>
-      <UserQuotaFeatures />
-      <ProductPage params={{ productName: "product_link_builder" }} />
-
-      <HasAuthorizationServer plans={["Basic plus"]}>
-        <div className="bg-red-500 p-4">This is a basic plus content</div>
-      </HasAuthorizationServer>
-
-      <IsForbidenServer plans={["Premium"]}>
-        <div className="bg-red-500 p-4">your have not the premium plan</div>
-      </IsForbidenServer>
-
-      <div className="w-full max-w-2xl space-y-8">
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold">Téléverser un fichier</h2>
-          <FileUploadWrapper entityId={user.id} entityType="user" />
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto py-8 px-4">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">
+            {t('welcome')} {user.name || user.email}
+          </h1>
+          <p className="text-gray-600 mt-2">
+            {t('dashboardSubtitle')}
+          </p>
         </div>
 
-        <FileList initialDocuments={documents} />
+        {/* Statistiques */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {stats.map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <Link
+                key={index}
+                href={stat.href}
+                className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 border border-gray-100"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">{stat.title}</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">
+                      {stat.value}
+                    </p>
+                  </div>
+                  <div className={`${stat.color} p-3 rounded-lg bg-opacity-10`}>
+                    <Icon className={`h-6 w-6 text-current ${stat.color.replace('bg-', 'text-')}`} />
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Actions rapides */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              {t('quickActions')}
+            </h2>
+            <div className="grid grid-cols-2 gap-4">
+              <Link
+                href="/hotels"
+                className="flex items-center justify-center gap-2 p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors text-blue-700"
+              >
+                <Hotel className="h-5 w-5" />
+                <span className="font-medium">{t('addHotel')}</span>
+              </Link>
+              <Link
+                href="/stays"
+                className="flex items-center justify-center gap-2 p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors text-purple-700"
+              >
+                <Calendar className="h-5 w-5" />
+                <span className="font-medium">{t('createStay')}</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Derniers devis */}
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">
+                {t('recentQuotes')}
+              </h2>
+              <Link
+                href="/quotes"
+                className="text-sm text-blue-600 hover:text-blue-700"
+              >
+                {t('viewAll')}
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {recentQuotes.map((quote) => (
+                <div
+                  key={quote.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
+                  <div>
+                    <p className="font-medium text-gray-900">
+                      {quote.firstName} {quote.lastName}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {quote.stay.name}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-gray-900">
+                      {quote.totalPrice ? `${quote.totalPrice.toNumber()}€` : '-'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(quote.createdAt).toLocaleDateString('fr-FR')}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {recentQuotes.length === 0 && (
+                <p className="text-center text-gray-500 py-4">
+                  {t('noRecentQuotes')}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Graphiques à venir */}
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="h-5 w-5 text-gray-600" />
+            <h2 className="text-lg font-semibold text-gray-900">
+              {t('analytics')}
+            </h2>
+          </div>
+          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+            <p className="text-gray-500">
+              {t('comingSoon')}
+            </p>
+          </div>
+        </div>
       </div>
-    </main>
+    </div>
   );
 }

@@ -10,11 +10,12 @@ export const verifyRecaptcha = async (): Promise<boolean> => {
   }
 
   try {
+    const recaptchaKey = env.NEXT_PUBLIC_GOOGLE_RECAPTCHA_KEY!; // Safe because we checked above
     const token = await new Promise<string>((resolve) => {
       if (typeof window !== "undefined" && window.grecaptcha) {
         window.grecaptcha.ready(() => {
           window.grecaptcha
-            .execute(env.NEXT_PUBLIC_GOOGLE_RECAPTCHA_KEY, {
+            .execute(recaptchaKey, {
               action: "submit",
             })
             .then(resolve);
@@ -37,4 +38,4 @@ export const verifyRecaptcha = async (): Promise<boolean> => {
     }).error();
     return false;
   }
-}; 
+};

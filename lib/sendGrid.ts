@@ -3,7 +3,13 @@ import env from "./env";
 import { logger } from "@/utils/logger";
 
 // Initialiser SendGrid avec votre clé API
-sgMail.setApiKey(env.SENDGRID_API_KEY);
+if (env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(env.SENDGRID_API_KEY);
+} else {
+  logger({
+    message: 'SendGrid API key is not configured',
+  }).warn();
+}
 
 type SendEmailProps = {
   to: string;
@@ -21,7 +27,7 @@ export async function sendEmail({ to, subject, html }: SendEmailProps) {
     const msg = {
       to,
       from: {
-        email: env.EMAIL_FROM,
+        email: env.EMAIL_FROM || 'noreply@example.com',
         name: "Recruit AI"
       },
       subject,

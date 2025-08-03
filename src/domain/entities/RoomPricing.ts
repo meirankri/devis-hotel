@@ -23,6 +23,9 @@ export class RoomPricing {
       roomId: params.roomId,
       ageRangeId: params.ageRangeId,
       price: new Decimal(params.price),
+      updatePrice: function() {
+        throw new Error('Cannot update an unsaved RoomPricing');
+      }
     };
   }
 

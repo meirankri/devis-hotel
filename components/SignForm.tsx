@@ -46,11 +46,12 @@ export function SignForm() {
     try {
       let token: string | undefined;
       if (env.NEXT_PUBLIC_GOOGLE_RECAPTCHA_KEY) {
+        const recaptchaKey = env.NEXT_PUBLIC_GOOGLE_RECAPTCHA_KEY;
         token = await new Promise<string>((resolve) => {
           if (typeof window !== "undefined" && window.grecaptcha) {
             window.grecaptcha.ready(() => {
               window.grecaptcha
-                .execute(env.NEXT_PUBLIC_GOOGLE_RECAPTCHA_KEY, {
+                .execute(recaptchaKey, {
                   action: "login",
                 })
                 .then(resolve);

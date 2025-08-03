@@ -16,7 +16,7 @@ export const contactRouter = publicProcedure
     try {
       const { name, email, message } = opts.input;
       await sendEmail({
-        to: env.EMAIL_FROM,
+        to: env.EMAIL_FROM || 'admin@example.com',
         subject: "New contact message",
         html: `
           <h1>New contact message</h1>

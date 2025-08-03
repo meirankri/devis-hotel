@@ -99,14 +99,14 @@ export const GET = async (req: NextRequest) => {
             id: existingUser?.id,
           },
         };
-      } catch (error: any) {
+      } catch (error) {
         logger({
           message: "Failed to sign in",
           context: error,
         }).error();
         return {
           success: false,
-          message: error.message,
+          message: error instanceof Error ? error.message : "Unknown error",
           data: null,
         };
       }
@@ -132,13 +132,13 @@ export const GET = async (req: NextRequest) => {
         status: 302,
       }
     );
-  } catch (error: any) {
+  } catch (error) {
     logger({
       message: "Failed to sign in with Facebook",
       context: error,
     }).error();
     return Response.json(
-      { error: error.message },
+      { error: error instanceof Error ? error.message : "Une erreur est survenue" },
       {
         status: 500,
       }

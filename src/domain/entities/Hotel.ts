@@ -20,6 +20,9 @@ export class Hotel {
       description: params.description ?? null,
       address: params.address ?? null,
       imageUrl: params.imageUrl ?? null,
+      update: function() {
+        throw new Error('Cannot update an unsaved Hotel');
+      }
     };
   }
 

@@ -13,6 +13,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "images.pexels.com",
       },
+      {
+        protocol: "https",
+        hostname: "pub-e3f0519ccb00487fb2ff9d1ebb87ccfc.r2.dev",
+      },
     ],
   },
   webpack(config) {

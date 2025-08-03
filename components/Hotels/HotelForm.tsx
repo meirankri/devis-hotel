@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
 import { trpc } from '@/app/_trpc/client';
@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
 import { createHotelSchema, type CreateHotelDto } from '@/application/dto/hotel.dto';
 import { Hotel } from '@/domain/entities/Hotel';
+import { ImageUpload } from '@/components/ui/image-upload';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 interface HotelFormProps {
   hotel?: Hotel;
@@ -23,6 +25,7 @@ export function HotelForm({ hotel, onSuccess, onCancel }: HotelFormProps) {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<CreateHotelDto>({
     resolver: zodResolver(createHotelSchema),
@@ -91,11 +94,18 @@ export function HotelForm({ hotel, onSuccess, onCancel }: HotelFormProps) {
       </div>
 
       <div>
-        <Label htmlFor="description">{t('hotelDescription')}</Label>
-        <Input
-          id="description"
-          {...register('description')}
-          placeholder={t('hotelDescriptionPlaceholder')}
+        <Label>{t('hotelDescription')}</Label>
+        <Controller
+          name="description"
+          control={control}
+          render={({ field }) => (
+            <RichTextEditor
+              value={field.value || ''}
+              onChange={field.onChange}
+              placeholder={t('hotelDescriptionPlaceholder')}
+              className="mt-1"
+            />
+          )}
         />
         {errors.description && (
           <p className="text-sm text-red-600 mt-1">{errors.description.message}</p>
@@ -115,11 +125,19 @@ export function HotelForm({ hotel, onSuccess, onCancel }: HotelFormProps) {
       </div>
 
       <div>
-        <Label htmlFor="imageUrl">{t('hotelImage')}</Label>
-        <Input
-          id="imageUrl"
-          {...register('imageUrl')}
-          placeholder={t('hotelImagePlaceholder')}
+        <Label>{t('hotelImage')}</Label>
+        <Controller
+          name="imageUrl"
+          control={control}
+          render={({ field }) => (
+            <ImageUpload
+              value={field.value || ''}
+              onChange={field.onChange}
+              entityId={hotel?.id || 'temp'}
+              entityType="hotel"
+              className="mt-1"
+            />
+          )}
         />
         {errors.imageUrl && (
           <p className="text-sm text-red-600 mt-1">{errors.imageUrl.message}</p>

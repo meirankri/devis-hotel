@@ -180,4 +180,6 @@ export const pricingPlanByPriceId = (priceId: string): PricingPlan => {
   if (yearlyPricings) {
     return yearlyPricings;
   }
+  
+  throw new Error(`No pricing plan found for priceId: ${priceId}`);
 };
