@@ -20,11 +20,9 @@ import Image from "next/image";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import Link from "next/link";
-import type { Stay as PrismaStay, Hotel } from "@prisma/client";
+import type { RouterOutputs } from "@/app/_trpc/client";
 
-type StayWithHotel = PrismaStay & {
-  hotel: Hotel;
-};
+type Stay = RouterOutputs["stays"]["getAll"][number];
 
 export function StaysList() {
   const t = useTranslations("Stays");
@@ -103,7 +101,7 @@ export function StaysList() {
       )}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {stays?.map((stay) => (
+        {stays?.map((stay: Stay) => (
           <div key={stay.id} className="group relative">
             {editingId === stay.id ? (
               <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">

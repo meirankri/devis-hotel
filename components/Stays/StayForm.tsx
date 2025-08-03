@@ -157,7 +157,7 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
         >
           <option value="">{t("selectHotel")}</option>
-          {hotels?.map((hotel) => (
+          {hotels?.map((hotel: { id: string; name: string }) => (
             <option key={hotel.id} value={hotel.id}>
               {hotel.name}
             </option>
