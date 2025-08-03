@@ -1,12 +1,13 @@
-import { getTranslations } from 'next-intl/server';
-import { validateSession } from '@/lib/lucia';
-import { db } from '@/lib/database/db';
-import { Hotel, Users, Calendar, TrendingUp, Euro } from 'lucide-react';
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import { getTranslations } from "next-intl/server";
+import { validateSession } from "@/lib/lucia";
+import { db } from "@/lib/database/db";
+import { Hotel, Users, Calendar, TrendingUp, Euro } from "lucide-react";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { Container } from "@/components/ui/container";
 
 export default async function DashboardPage() {
-  const t = await getTranslations('Dashboard');
+  const t = await getTranslations("Dashboard");
   const { user } = await validateSession();
 
   if (!user) {
@@ -20,44 +21,44 @@ export default async function DashboardPage() {
     db.stay.count({ where: { isActive: true } }),
     db.quote.aggregate({
       _sum: { totalPrice: true },
-      where: { status: 'ACCEPTED' }
-    })
+      where: { status: "ACCEPTED" },
+    }),
   ]);
 
   const stats = [
     {
-      title: t('hotels'),
+      title: t("hotels"),
       value: hotelCount,
       icon: Hotel,
-      color: 'bg-blue-500',
-      href: '/hotels',
+      color: "bg-blue-500",
+      href: "/dashboard/hotels",
     },
     {
-      title: t('quotes'),
+      title: t("quotes"),
       value: quoteCount,
       icon: Users,
-      color: 'bg-green-500',
-      href: '/quotes',
+      color: "bg-green-500",
+      href: "/dashboard/quotes",
     },
     {
-      title: t('activeStays'),
+      title: t("activeStays"),
       value: stayCount,
       icon: Calendar,
-      color: 'bg-purple-500',
-      href: '/stays',
+      color: "bg-purple-500",
+      href: "/dashboard/stays",
     },
     {
-      title: t('revenue'),
+      title: t("revenue"),
       value: `${totalRevenue._sum.totalPrice?.toNumber() || 0}€`,
       icon: Euro,
-      color: 'bg-orange-500',
-      href: '/quotes?status=confirmed',
+      color: "bg-orange-500",
+      href: "/dashboard/quotes?status=confirmed",
     },
   ];
 
   const recentQuotes = await db.quote.findMany({
     take: 5,
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
     include: {
       stay: true,
     },
@@ -65,14 +66,12 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto py-8 px-4">
+      <Container>
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
-            {t('welcome')} {user.name || user.email}
+            {t("welcome")} {user.name || user.email}
           </h1>
-          <p className="text-gray-600 mt-2">
-            {t('dashboardSubtitle')}
-          </p>
+          <p className="text-gray-600 mt-2">{t("dashboardSubtitle")}</p>
         </div>
 
         {/* Statistiques */}
@@ -93,7 +92,12 @@ export default async function DashboardPage() {
                     </p>
                   </div>
                   <div className={`${stat.color} p-3 rounded-lg bg-opacity-10`}>
-                    <Icon className={`h-6 w-6 text-current ${stat.color.replace('bg-', 'text-')}`} />
+                    <Icon
+                      className={`h-6 w-6 text-current ${stat.color.replace(
+                        "bg-",
+                        "text-"
+                      )}`}
+                    />
                   </div>
                 </div>
               </Link>
@@ -105,22 +109,22 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              {t('quickActions')}
+              {t("quickActions")}
             </h2>
             <div className="grid grid-cols-2 gap-4">
               <Link
-                href="/hotels"
+                href="/dashboard/hotels"
                 className="flex items-center justify-center gap-2 p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors text-blue-700"
               >
                 <Hotel className="h-5 w-5" />
-                <span className="font-medium">{t('addHotel')}</span>
+                <span className="font-medium">{t("addHotel")}</span>
               </Link>
               <Link
-                href="/stays"
+                href="/dashboard/stays"
                 className="flex items-center justify-center gap-2 p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors text-purple-700"
               >
                 <Calendar className="h-5 w-5" />
-                <span className="font-medium">{t('createStay')}</span>
+                <span className="font-medium">{t("createStay")}</span>
               </Link>
             </div>
           </div>
@@ -129,13 +133,13 @@ export default async function DashboardPage() {
           <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">
-                {t('recentQuotes')}
+                {t("recentQuotes")}
               </h2>
               <Link
-                href="/quotes"
+                href="/dashboard/quotes"
                 className="text-sm text-blue-600 hover:text-blue-700"
               >
-                {t('viewAll')}
+                {t("viewAll")}
               </Link>
             </div>
             <div className="space-y-3">
@@ -148,23 +152,23 @@ export default async function DashboardPage() {
                     <p className="font-medium text-gray-900">
                       {quote.firstName} {quote.lastName}
                     </p>
-                    <p className="text-sm text-gray-600">
-                      {quote.stay.name}
-                    </p>
+                    <p className="text-sm text-gray-600">{quote.stay.name}</p>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-gray-900">
-                      {quote.totalPrice ? `${quote.totalPrice.toNumber()}€` : '-'}
+                      {quote.totalPrice
+                        ? `${quote.totalPrice.toNumber()}€`
+                        : "-"}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {new Date(quote.createdAt).toLocaleDateString('fr-FR')}
+                      {new Date(quote.createdAt).toLocaleDateString("fr-FR")}
                     </p>
                   </div>
                 </div>
               ))}
               {recentQuotes.length === 0 && (
                 <p className="text-center text-gray-500 py-4">
-                  {t('noRecentQuotes')}
+                  {t("noRecentQuotes")}
                 </p>
               )}
             </div>
@@ -176,16 +180,14 @@ export default async function DashboardPage() {
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="h-5 w-5 text-gray-600" />
             <h2 className="text-lg font-semibold text-gray-900">
-              {t('analytics')}
+              {t("analytics")}
             </h2>
           </div>
           <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-            <p className="text-gray-500">
-              {t('comingSoon')}
-            </p>
+            <p className="text-gray-500">{t("comingSoon")}</p>
           </div>
         </div>
-      </div>
+      </Container>
     </div>
   );
 }

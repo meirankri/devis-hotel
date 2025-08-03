@@ -1,13 +1,14 @@
 import { getTranslations } from 'next-intl/server';
 import { AgeRangesList } from '@/components/AgeRanges/AgeRangesList';
 import { Users } from 'lucide-react';
+import { Container } from '@/components/ui/container';
 
 export default async function AgeRangesPage() {
   const t = await getTranslations('AgeRanges');
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="container mx-auto py-8 px-4 max-w-6xl">
+      <Container className="max-w-6xl">
         <div className="mb-8 flex items-center gap-3">
           <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg">
             <Users className="h-8 w-8 text-white" />
@@ -21,7 +22,7 @@ export default async function AgeRangesPage() {
         </div>
         
         <AgeRangesList />
-      </div>
+      </Container>
     </div>
   );
 }

@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
-import { Calendar, Users, Euro, Mail, Phone, CheckCircle, XCircle, Clock, MapPin, FileText } from 'lucide-react';
+import { Calendar, Users, Euro, Mail, Phone, CheckCircle, XCircle, Clock, MapPin, FileText, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 import { useLocale } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { generateQuotePdf } from '@/lib/pdf/generateQuotePdf';
 
 interface QuoteDetailProps {
   quote: any;
@@ -97,6 +98,78 @@ export function QuoteDetail({ quote }: QuoteDetailProps) {
       title: t('priceCalculated'),
       description: t('priceCalculatedDesc', { price: total.toFixed(2) }),
     });
+  };
+
+  const handleGeneratePdf = () => {
+    try {
+      // Préparer les données pour le PDF
+      const roomPrices = quote.stay.hotel.rooms
+        .flatMap((room: any) => room.roomPricings)
+        .map((rp: any) => ({
+          ageRangeId: rp.ageRangeId,
+          roomId: rp.roomId,
+          price: Number(rp.price)
+        }));
+
+      console.log('Quote data:', quote);
+      console.log('Room prices:', roomPrices);
+      console.log('Quote participants:', quote.quoteParticipants);
+
+      const quoteData = {
+        quote: {
+          id: quote.id,
+          firstName: quote.firstName,
+          lastName: quote.lastName,
+          email: quote.email,
+          phone: quote.phone,
+          checkInDate: quote.checkIn,
+          checkOutDate: quote.checkOut,
+          status: quote.status,
+          createdAt: quote.createdAt,
+          stay: {
+            name: quote.stay.name,
+            hotel: {
+              name: quote.stay.hotel.name,
+              address: quote.stay.hotel.address
+            }
+          },
+          quoteParticipants: quote.quoteParticipants.map((p: any) => ({
+            count: p.count,
+            ageRange: {
+              id: p.ageRange.id,
+              name: p.ageRange.name,
+              minAge: p.ageRange.minAge,
+              maxAge: p.ageRange.maxAge
+            }
+          }))
+        },
+        roomPrices
+      };
+
+      const pdfBlob = generateQuotePdf(quoteData);
+      
+      // Créer un lien de téléchargement
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `devis-${quote.id.slice(0, 8)}-${quote.lastName}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: 'PDF généré',
+        description: 'Le devis a été téléchargé avec succès',
+      });
+    } catch (error) {
+      console.error('Erreur génération PDF:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de générer le PDF',
+        variant: 'destructive',
+      });
+    }
   };
 
   const totalParticipants = quote.quoteParticipants.reduce((sum: number, p: any) => sum + p.count, 0);
@@ -271,6 +344,14 @@ export function QuoteDetail({ quote }: QuoteDetailProps) {
         >
           <FileText className="mr-2 h-4 w-4" />
           {t('print')}
+        </Button>
+        
+        <Button
+          variant="outline"
+          onClick={handleGeneratePdf}
+        >
+          <Download className="mr-2 h-4 w-4" />
+          Télécharger PDF
         </Button>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { db } from '@/lib/database/db';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Hotel } from 'lucide-react';
 import Link from 'next/link';
+import { Container } from '@/components/ui/container';
 
 interface RoomsPageProps {
   params: Promise<{
@@ -26,7 +27,7 @@ export default async function RoomsPage({ params }: RoomsPageProps) {
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="container mx-auto py-8 px-4 max-w-7xl">
+      <Container className="max-w-7xl">
         {/* Header */}
         <div className="mb-8">
           <Link 
@@ -53,7 +54,7 @@ export default async function RoomsPage({ params }: RoomsPageProps) {
         </div>
         
         <RoomsList hotelId={hotelId} hotelName={hotel.name} />
-      </div>
+      </Container>
     </div>
   );
 }
