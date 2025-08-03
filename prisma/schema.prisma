@@ -123,3 +123,133 @@ model Document {
   @@index([entityId, entityType])
   @@index([createdBy])
 }
+
+// Modèles pour la gestion des séjours
+
+model Hotel {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  address     String?
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  rooms       Room[]
+  stays       Stay[]
+}
+
+model Room {
+  id            String   @id @default(uuid())
+  hotelId       String
+  name          String
+  description   String?
+  capacity      Int
+  imageUrl      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  hotel         Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  roomPricings  RoomPricing[]
+  quoteRooms    QuoteRoom[]
+}
+
+model AgeRange {
+  id          String   @id @default(uuid())
+  name        String   // Ex: "Adulte", "Enfant 3-12 ans", "Bébé"
+  minAge      Int?
+  maxAge      Int?
+  order       Int      @default(0) // Pour l'ordre d'affichage
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  roomPricings RoomPricing[]
+  quoteDetails QuoteDetail[]
+}
+
+model RoomPricing {
+  id          String   @id @default(uuid())
+  roomId      String
+  ageRangeId  String
+  price       Decimal  // Prix par personne
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  ageRange    AgeRange @relation(fields: [ageRangeId], references: [id], onDelete: Cascade)
+  
+  @@unique([roomId, ageRangeId])
+}
+
+model Stay {
+  id                    String   @id @default(uuid())
+  name                  String   // Ex: "Pessah 2024", "Été 2024"
+  slug                  String   @unique // Pour l'URL publique
+  description           String?
+  startDate             DateTime
+  endDate               DateTime
+  hotelId               String
+  allowPartialBooking   Boolean  @default(false) // Permet réservation partielle
+  minDays               Int?     // Nombre minimum de jours si partielle
+  maxDays               Int?     // Nombre maximum de jours
+  isActive              Boolean  @default(true)
+  imageUrl              String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  hotel                 Hotel    @relation(fields: [hotelId], references: [id])
+  quotes                Quote[]
+}
+
+model Quote {
+  id                String       @id @default(uuid())
+  stayId            String
+  firstName         String
+  lastName          String
+  email             String
+  phone             String?
+  requestCallback   Boolean      @default(false)
+  totalPrice        Decimal
+  numberOfDays      Int
+  checkInDate       DateTime?
+  checkOutDate      DateTime?
+  status            QuoteStatus  @default(PENDING)
+  notes             String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  
+  stay              Stay         @relation(fields: [stayId], references: [id])
+  quoteRooms        QuoteRoom[]
+  quoteDetails      QuoteDetail[]
+}
+
+model QuoteRoom {
+  id          String   @id @default(uuid())
+  quoteId     String
+  roomId      String
+  quantity    Int      @default(1) // Nombre de chambres de ce type
+  
+  quote       Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  room        Room     @relation(fields: [roomId], references: [id])
+  
+  @@unique([quoteId, roomId])
+}
+
+model QuoteDetail {
+  id          String   @id @default(uuid())
+  quoteId     String
+  ageRangeId  String
+  quantity    Int      // Nombre de personnes pour cette tranche d'âge
+  unitPrice   Decimal  // Prix unitaire au moment du devis
+  totalPrice  Decimal  // Prix total pour cette ligne
+  
+  quote       Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  ageRange    AgeRange @relation(fields: [ageRangeId], references: [id])
+}
+
+enum QuoteStatus {
+  PENDING
+  CONTACTED
+  CONFIRMED
+  CANCELLED
+}

@@ -20,5 +20,12 @@ const menuData: Menu[] = [
     newTab: false,
     userOnly: true,
   },
+  {
+    id: 4,
+    title: "hotels",
+    path: "/hotels",
+    newTab: false,
+    userOnly: true,
+  },
 ];
 export default menuData;

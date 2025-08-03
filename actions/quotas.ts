@@ -116,10 +116,10 @@ function calculateNextQuotaRenewalDate(user: User): boolean {
     context: { user },
   });
   try {
-    const lastRenewalDate = new Date(user.nextQuotaRenewalDate);
-    if (!lastRenewalDate) {
+    if (!user.nextQuotaRenewalDate) {
       return false;
     }
+    const lastRenewalDate = new Date(user.nextQuotaRenewalDate);
 
     const now = new Date();
     const nextRenewalDate = addMonths(lastRenewalDate, 1);
@@ -155,8 +155,8 @@ export async function checkAndRenewQuotas(userId: string): Promise<void> {
     const toBeRenew = calculateNextQuotaRenewalDate(user);
     const nextMonth = addMonths(new Date(), 1);
 
-    if (toBeRenew) {
-      await renewUserQuotas(user);
+    if (toBeRenew && user.subscription) {
+      await renewUserQuotas(user as User & { subscription: Subscription & { products: Product[] } });
       await db.user.update({
         where: { id: user.id },
         data: { nextQuotaRenewalDate: nextMonth },
