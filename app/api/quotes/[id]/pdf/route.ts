@@ -1,6 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/database/db";
 import { calculatePriceFromQuoteData } from "@/utils/priceCalculator";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { Prisma } from "@prisma/client";
+
+// Type pour le devis avec toutes ses relations
+type QuoteWithRelations = Prisma.QuoteGetPayload<{
+  include: {
+    stay: {
+      include: {
+        hotel: true;
+        organization: true;
+      };
+    };
+    quoteParticipants: {
+      include: {
+        ageRange: true;
+      };
+    };
+    quoteRooms: {
+      include: {
+        room: {
+          include: {
+            roomPricings: {
+              include: {
+                ageRange: true;
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}>;
 
 export async function GET(
   request: NextRequest,
@@ -9,7 +42,7 @@ export async function GET(
   try {
     const { id } = await context.params;
 
-    const quote = await prisma.quote.findUnique({
+    const quote: QuoteWithRelations | null = await prisma.quote.findUnique({
       where: { id },
       include: {
         stay: {
@@ -65,285 +98,246 @@ export async function GET(
         (1000 * 60 * 60 * 24)
     );
 
-    // Générer le HTML pour le PDF
-    const html = `
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 40px;
-            color: #333;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-            border-bottom: 2px solid #0066cc;
-            padding-bottom: 20px;
-        }
-        .header h1 {
-            color: #0066cc;
-            margin-bottom: 10px;
-        }
-        .section {
-            margin-bottom: 30px;
-            padding: 20px;
-            background-color: #f9f9f9;
-            border-radius: 8px;
-        }
-        .section h2 {
-            color: #0066cc;
-            margin-bottom: 15px;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 10px;
-        }
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-        .info-item {
-            margin-bottom: 10px;
-        }
-        .info-label {
-            font-weight: bold;
-            color: #666;
-            margin-bottom: 5px;
-        }
-        .info-value {
-            color: #333;
-        }
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        .table th, .table td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: left;
-        }
-        .table th {
-            background-color: #0066cc;
-            color: white;
-        }
-        .table tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        .total {
-            text-align: right;
-            font-size: 24px;
-            font-weight: bold;
-            color: #0066cc;
-            margin-top: 20px;
-        }
-        .footer {
-            margin-top: 40px;
-            text-align: center;
-            font-size: 12px;
-            color: #666;
-        }
-        .status {
-            display: inline-block;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-weight: bold;
-            ${
-              quote.status === "PENDING"
-                ? "background-color: #fef3c7; color: #d97706;"
-                : ""
-            }
-            ${
-              quote.status === "ACCEPTED"
-                ? "background-color: #d1fae5; color: #059669;"
-                : ""
-            }
-            ${
-              quote.status === "REJECTED"
-                ? "background-color: #fee2e2; color: #dc2626;"
-                : ""
-            }
-            ${
-              quote.status === "EXPIRED"
-                ? "background-color: #e5e7eb; color: #6b7280;"
-                : ""
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>Devis #${quote.quoteNumber}</h1>
-        <p>Date de création : ${new Date(quote.createdAt).toLocaleDateString(
-          "fr-FR"
-        )}</p>
-        <span class="status">${
-          quote.status === "PENDING"
-            ? "En attente"
-            : quote.status === "ACCEPTED"
-            ? "Accepté"
-            : quote.status === "REJECTED"
-            ? "Refusé"
-            : "Expiré"
-        }</span>
-    </div>
-
-    <div class="section">
-        <h2>Informations Client</h2>
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Nom complet</div>
-                <div class="info-value">${quote.firstName} ${
-      quote.lastName
-    }</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Email</div>
-                <div class="info-value">${quote.email}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Téléphone</div>
-                <div class="info-value">${quote.phone}</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="section">
-        <h2>Détails du Séjour</h2>
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Séjour</div>
-                <div class="info-value">${quote.stay.name}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Hôtel</div>
-                <div class="info-value">${quote.stay.hotel.name}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Dates</div>
-                <div class="info-value">
-                    Du ${new Date(quote.checkIn).toLocaleDateString("fr-FR")} 
-                    au ${new Date(quote.checkOut).toLocaleDateString("fr-FR")}
-                </div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Nombre de nuits</div>
-                <div class="info-value">${nights} nuits</div>
-            </div>
-            ${
-              quote.stay.organization
-                ? `
-            <div class="info-item">
-                <div class="info-label">Organisation</div>
-                <div class="info-value">${quote.stay.organization.name}</div>
-            </div>
-            `
-                : ""
-            }
-        </div>
-    </div>
-
-    ${
-      quote.quoteRooms.length > 0
-        ? `
-    <div class="section">
-        <h2>Chambres Sélectionnées</h2>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Chambre</th>
-                    <th>Capacité</th>
-                    <th>Quantité</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${quote.quoteRooms
-                  .map(
-                    (qr: any) => `
-                <tr>
-                    <td>${qr.room.name}</td>
-                    <td>${qr.room.capacity} personnes</td>
-                    <td>${qr.quantity}</td>
-                </tr>
-                `
-                  )
-                  .join("")}
-            </tbody>
-        </table>
-    </div>
-    `
-        : ""
+    // Générer le PDF avec jsPDF
+    try {
+      const doc = new jsPDF();
+      
+      // Configuration des couleurs
+      const primaryColor = { r: 0, g: 102, b: 204 };
+      const textColor = { r: 51, g: 51, b: 51 };
+      const lightGray = { r: 245, g: 245, b: 245 };
+      
+      let yPosition = 20;
+      const lineHeight = 7;
+      const margin = 20;
+      const pageWidth = doc.internal.pageSize.width;
+      
+      // Header
+      doc.setFillColor(primaryColor.r, primaryColor.g, primaryColor.b);
+      doc.rect(0, 0, pageWidth, 40, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(20);
+      doc.text(`Devis #${quote.quoteNumber}`, pageWidth / 2, 20, { align: 'center' });
+      
+      doc.setFontSize(10);
+      doc.text(`Date de création : ${new Date(quote.createdAt).toLocaleDateString("fr-FR")}`, pageWidth / 2, 30, { align: 'center' });
+      
+      yPosition = 50;
+      
+      // Status
+      const statusText = quote.status === "PENDING" ? "En attente" :
+                        quote.status === "ACCEPTED" ? "Accepté" :
+                        quote.status === "REJECTED" ? "Refusé" : "Expiré";
+      
+      const statusColor = quote.status === "PENDING" ? { r: 217, g: 119, b: 6 } :
+                         quote.status === "ACCEPTED" ? { r: 5, g: 150, b: 105 } :
+                         quote.status === "REJECTED" ? { r: 220, g: 38, b: 38 } :
+                         { r: 107, g: 114, b: 128 };
+      
+      doc.setFillColor(statusColor.r, statusColor.g, statusColor.b);
+      doc.setTextColor(255, 255, 255);
+      doc.roundedRect(pageWidth / 2 - 20, yPosition - 5, 40, 10, 3, 3, 'F');
+      doc.setFontSize(9);
+      doc.text(statusText, pageWidth / 2, yPosition, { align: 'center' });
+      
+      yPosition += 20;
+      
+      // Reset text color
+      doc.setTextColor(textColor.r, textColor.g, textColor.b);
+      
+      // Section: Informations Client
+      doc.setFillColor(lightGray.r, lightGray.g, lightGray.b);
+      doc.rect(margin, yPosition, pageWidth - 2 * margin, 8, 'F');
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Informations Client", margin + 5, yPosition + 6);
+      
+      yPosition += 15;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      
+      doc.text(`Nom complet : ${quote.firstName} ${quote.lastName}`, margin, yPosition);
+      yPosition += lineHeight;
+      doc.text(`Email : ${quote.email}`, margin, yPosition);
+      yPosition += lineHeight;
+      doc.text(`Téléphone : ${quote.phone}`, margin, yPosition);
+      yPosition += 15;
+      
+      // Section: Détails du Séjour
+      doc.setFillColor(lightGray.r, lightGray.g, lightGray.b);
+      doc.rect(margin, yPosition, pageWidth - 2 * margin, 8, 'F');
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Détails du Séjour", margin + 5, yPosition + 6);
+      
+      yPosition += 15;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      
+      doc.text(`Séjour : ${quote.stay.name}`, margin, yPosition);
+      yPosition += lineHeight;
+      doc.text(`Hôtel : ${quote.stay.hotel.name}`, margin, yPosition);
+      yPosition += lineHeight;
+      doc.text(`Dates : Du ${new Date(quote.checkIn).toLocaleDateString("fr-FR")} au ${new Date(quote.checkOut).toLocaleDateString("fr-FR")}`, margin, yPosition);
+      yPosition += lineHeight;
+      doc.text(`Nombre de nuits : ${nights} nuits`, margin, yPosition);
+      
+      if (quote.stay.organization) {
+        yPosition += lineHeight;
+        doc.text(`Organisation : ${quote.stay.organization.name}`, margin, yPosition);
+      }
+      
+      yPosition += 15;
+      
+      // Section: Chambres sélectionnées
+      if (quote.quoteRooms.length > 0) {
+        doc.setFillColor(lightGray.r, lightGray.g, lightGray.b);
+        doc.rect(margin, yPosition, pageWidth - 2 * margin, 8, 'F');
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text("Chambres Sélectionnées", margin + 5, yPosition + 6);
+        
+        yPosition += 15;
+        
+        // Utiliser autoTable pour les chambres
+        autoTable(doc, {
+          startY: yPosition,
+          head: [['Chambre', 'Capacité', 'Quantité']],
+          body: quote.quoteRooms.map((qr) => [
+            qr.room.name,
+            `${qr.room.capacity} personnes`,
+            qr.quantity.toString()
+          ]),
+          theme: 'grid',
+          headStyles: {
+            fillColor: [primaryColor.r, primaryColor.g, primaryColor.b],
+            textColor: [255, 255, 255],
+            fontSize: 10,
+            fontStyle: 'bold',
+            halign: 'left'
+          },
+          bodyStyles: {
+            fontSize: 10,
+            textColor: [textColor.r, textColor.g, textColor.b],
+            halign: 'left'
+          },
+          columnStyles: {
+            0: { cellWidth: 80 },
+            1: { cellWidth: 60 },
+            2: { cellWidth: 30 }
+          },
+          margin: { left: margin, right: margin }
+        });
+        
+        yPosition = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+      }
+      
+      // Section: Participants
+      doc.setFillColor(lightGray.r, lightGray.g, lightGray.b);
+      doc.rect(margin, yPosition, pageWidth - 2 * margin, 8, 'F');
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Participants", margin + 5, yPosition + 6);
+      
+      yPosition += 15;
+      
+      // Utiliser autoTable pour les participants
+      const participantsData = quote.quoteParticipants
+        .filter((p) => p.count > 0)
+        .map((participant) => {
+          const ageText = participant.ageRange.minAge !== null && participant.ageRange.maxAge !== null
+            ? `${participant.ageRange.minAge}-${participant.ageRange.maxAge} ans`
+            : "N/A";
+          return [
+            participant.ageRange.name,
+            ageText,
+            participant.count.toString()
+          ];
+        });
+      
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Catégorie', 'Tranche d\'âge', 'Nombre']],
+        body: participantsData,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [primaryColor.r, primaryColor.g, primaryColor.b],
+          textColor: [255, 255, 255],
+          fontSize: 10,
+          fontStyle: 'bold',
+          halign: 'left'
+        },
+        bodyStyles: {
+          fontSize: 10,
+          textColor: [textColor.r, textColor.g, textColor.b],
+          halign: 'left'
+        },
+        columnStyles: {
+          0: { cellWidth: 80 },
+          1: { cellWidth: 60 },
+          2: { cellWidth: 30 }
+        },
+        margin: { left: margin, right: margin }
+      });
+      
+      yPosition = (doc as any).lastAutoTable.finalY + 10;
+      
+      // Section: Demandes spéciales
+      if (quote.specialRequests) {
+        doc.setFillColor(lightGray.r, lightGray.g, lightGray.b);
+        doc.rect(margin, yPosition, pageWidth - 2 * margin, 8, 'F');
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text("Demandes Spéciales", margin + 5, yPosition + 6);
+        
+        yPosition += 15;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        
+        // Gérer le texte long
+        const lines = doc.splitTextToSize(quote.specialRequests, pageWidth - 2 * margin - 10);
+        lines.forEach((line: string) => {
+          doc.text(line, margin + 5, yPosition);
+          yPosition += lineHeight;
+        });
+        
+        yPosition += 10;
+      }
+      
+      // Total
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(primaryColor.r, primaryColor.g, primaryColor.b);
+      doc.text(`Prix Total Estimé : ${totalPrice.toFixed(2)} €`, pageWidth - margin, yPosition, { align: 'right' });
+      
+      // Footer
+      yPosition = doc.internal.pageSize.height - 30;
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(128, 128, 128);
+      doc.text("Ce devis est une estimation. Le prix final sera confirmé par notre équipe.", pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 5;
+      doc.text(`Document généré le ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")}`, pageWidth / 2, yPosition, { align: 'center' });
+      
+      // Générer le buffer PDF
+      const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
+      
+      // Retourner le PDF avec les headers appropriés
+      return new NextResponse(pdfBuffer, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="devis-${quote.quoteNumber}.pdf"`,
+        },
+      });
+    } catch (pdfError) {
+      console.error("Error generating PDF:", pdfError);
+      return NextResponse.json(
+        { error: "Failed to generate PDF", details: pdfError },
+        { status: 500 }
+      );
     }
-
-    <div class="section">
-        <h2>Participants</h2>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Catégorie</th>
-                    <th>Tranche d'âge</th>
-                    <th>Nombre</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${quote.quoteParticipants
-                  .filter((p: any) => p.count > 0)
-                  .map(
-                    (participant: any) => `
-                <tr>
-                    <td>${participant.ageRange.name}</td>
-                    <td>${
-                      participant.ageRange.minAge !== null &&
-                      participant.ageRange.maxAge !== null
-                        ? `${participant.ageRange.minAge}-${participant.ageRange.maxAge} ans`
-                        : "N/A"
-                    }</td>
-                    <td>${participant.count}</td>
-                </tr>
-                `
-                  )
-                  .join("")}
-            </tbody>
-        </table>
-    </div>
-
-    ${
-      quote.specialRequests
-        ? `
-    <div class="section">
-        <h2>Demandes Spéciales</h2>
-        <p>${quote.specialRequests}</p>
-    </div>
-    `
-        : ""
-    }
-
-    <div class="total">
-        Prix Total Estimé : ${totalPrice.toFixed(2)} €
-    </div>
-
-    <div class="footer">
-        <p>Ce devis est une estimation. Le prix final sera confirmé par notre équipe.</p>
-        <p>Document généré le ${new Date().toLocaleDateString(
-          "fr-FR"
-        )} à ${new Date().toLocaleTimeString("fr-FR")}</p>
-    </div>
-</body>
-</html>
-    `;
-
-    // Convertir le HTML en PDF en utilisant l'API de conversion
-    // Pour cette démonstration, nous retournons le HTML avec les headers appropriés pour le téléchargement
-    return new NextResponse(html, {
-      status: 200,
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Content-Disposition": `attachment; filename="devis-${quote.quoteNumber}.html"`,
-      },
-    });
   } catch (error) {
     console.error("Error generating PDF:", error);
     return NextResponse.json(
