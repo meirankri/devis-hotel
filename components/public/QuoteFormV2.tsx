@@ -21,6 +21,11 @@ import {
   FileText,
   Check,
   X,
+  Bed,
+  Crown,
+  ArrowRight,
+  Download,
+  Eye,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
@@ -33,7 +38,6 @@ interface QuoteFormProps {
   stay: any;
 }
 
-// Types pour la gestion des chambres
 interface RoomSelection {
   roomId: string;
   room: any;
@@ -45,7 +49,6 @@ interface RoomInstance {
   occupants: { [ageRangeId: string]: number };
 }
 
-// Schéma de validation
 const quoteFormSchema = z.object({
   firstName: z.string().min(1, "Le prénom est requis"),
   lastName: z.string().min(1, "Le nom est requis"),
@@ -69,7 +72,6 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
   const [selectedRooms, setSelectedRooms] = useState<RoomSelection[]>([]);
   const [showRoomSelector, setShowRoomSelector] = useState(false);
 
-  // Extraire les tranches d'âge disponibles
   const ageRanges = useMemo(
     () =>
       stay.hotel.rooms
@@ -103,7 +105,6 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
   const checkIn = watch("checkIn");
   const checkOut = watch("checkOut");
 
-  // Calculer le nombre de nuits
   const nights = useMemo(() => {
     if (!checkIn || !checkOut) return 0;
     const start = new Date(checkIn);
@@ -111,12 +112,10 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
     return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
   }, [checkIn, checkOut]);
 
-  // Ajouter une chambre
   const addRoom = (room: any) => {
     const existingRoom = selectedRooms.find((r) => r.roomId === room.id);
 
     if (existingRoom) {
-      // Ajouter une nouvelle instance de cette chambre
       setSelectedRooms((prev) =>
         prev.map((r) =>
           r.roomId === room.id
@@ -134,7 +133,6 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
         )
       );
     } else {
-      // Ajouter une nouvelle chambre
       setSelectedRooms((prev) => [
         ...prev,
         {
@@ -151,7 +149,6 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
     }
   };
 
-  // Supprimer une instance de chambre
   const removeRoomInstance = (roomId: string, instanceId: string) => {
     setSelectedRooms((prev) => {
       const updated = prev
@@ -170,7 +167,6 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
     });
   };
 
-  // Mettre à jour les occupants d'une instance
   const updateOccupants = (
     roomId: string,
     instanceId: string,
@@ -194,7 +190,6 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
     );
   };
 
-  // Calculer le nombre total d'occupants pour une instance
   const getTotalOccupants = (instance: RoomInstance): number => {
     return Object.values(instance.occupants).reduce(
       (sum, count) => sum + count,
@@ -202,14 +197,12 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
     );
   };
 
-  // Calculer le prix total
   const calculateTotalPrice = (): number => {
     return calculatePriceFromRoomSelections(selectedRooms);
   };
 
   const totalPrice = calculateTotalPrice();
 
-  // Compter le total de participants
   const totalParticipants = useMemo(() => {
     return selectedRooms.reduce(
       (sum, { instances }) =>
@@ -251,12 +244,10 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
 
     setIsSubmitting(true);
     try {
-      // Préparer les données pour l'API
       const rooms = selectedRooms.flatMap(({ roomId, instances }) =>
         instances.map(() => ({ roomId, quantity: 1 }))
       );
 
-      // Calculer les participants totaux par tranche d'âge
       const participantsByAge: { [ageRangeId: string]: number } = {};
       selectedRooms.forEach(({ instances }) => {
         instances.forEach((instance) => {
@@ -282,46 +273,37 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
     }
   };
 
-  // Si un devis a été soumis avec succès
   if (submittedQuoteId) {
     return (
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <div className="text-center space-y-6">
-              <div className="text-green-600 mb-4">
-                <svg
-                  className="w-16 h-16 mx-auto"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
-                  />
-                </svg>
+      <section className="py-20 relative">
+        <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50"></div>
+        <div className="container mx-auto px-4 max-w-4xl relative">
+          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-12">
+            <div className="text-center space-y-8">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full opacity-20 animate-pulse"></div>
+                <div className="relative p-6 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full inline-flex text-white">
+                  <Check className="w-12 h-12" />
+                </div>
               </div>
 
-              <h2 className="text-3xl font-bold text-gray-900">
-                {t("quoteSuccess")}
-              </h2>
+              <div className="space-y-4">
+                <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-emerald-600">
+                  {t("quoteSuccess")}
+                </h2>
+                <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+                  {t("quoteSuccessDescription")}
+                </p>
+              </div>
 
-              <p className="text-lg text-gray-600">
-                {t("quoteSuccessDescription")}
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+              <div className="grid sm:grid-cols-2 gap-4 max-w-lg mx-auto">
                 <Button
-                  variant="outline"
                   onClick={() =>
                     router.push(`/${locale}/quotes/${submittedQuoteId}`)
                   }
-                  className="flex items-center gap-2"
+                  className="bg-white text-gray-900 hover:bg-gray-50 border border-gray-200 shadow-lg group"
                 >
-                  <FileText className="h-4 w-4" />
+                  <Eye className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
                   {t("viewQuote")}
                 </Button>
 
@@ -329,9 +311,9 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
                   onClick={() =>
                     window.open(`/api/quotes/${submittedQuoteId}/pdf`, "_blank")
                   }
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 flex items-center gap-2"
+                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg group"
                 >
-                  <FileText className="h-4 w-4" />
+                  <Download className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
                   {t("downloadPDF")}
                 </Button>
               </div>
@@ -342,7 +324,7 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
                   setSubmittedQuoteId(null);
                   window.location.reload();
                 }}
-                className="mt-4"
+                className="text-gray-500 hover:text-gray-700 mt-6"
               >
                 {t("newQuote")}
               </Button>
@@ -354,323 +336,363 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
   }
 
   return (
-    <section className="py-16 bg-gray-50">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+    <section className="py-20 relative">
+      <div className="absolute inset-0 bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30"></div>
+      <div className="container mx-auto px-4 max-w-6xl relative">
+        <div className="text-center mb-16 space-y-6">
+          <h2 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-900 via-purple-800 to-indigo-900">
             {t("title")}
           </h2>
+        </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Informations personnelles */}
-            <div className="space-y-4">
-              <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                <User className="h-5 w-5" />
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl">
+                <User className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900">
                 {t("personalInfo")}
               </h3>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="firstName">{t("firstName")} *</Label>
-                  <Input
-                    id="firstName"
-                    {...register("firstName")}
-                    placeholder={t("firstNamePlaceholder")}
-                  />
-                  {errors.firstName && (
-                    <p className="text-sm text-red-600 mt-1">
-                      {errors.firstName.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="lastName">{t("lastName")} *</Label>
-                  <Input
-                    id="lastName"
-                    {...register("lastName")}
-                    placeholder={t("lastNamePlaceholder")}
-                  />
-                  {errors.lastName && (
-                    <p className="text-sm text-red-600 mt-1">
-                      {errors.lastName.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="email">{t("email")} *</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="email"
-                      type="email"
-                      {...register("email")}
-                      placeholder={t("emailPlaceholder")}
-                      className="pl-10"
-                    />
-                  </div>
-                  {errors.email && (
-                    <p className="text-sm text-red-600 mt-1">
-                      {errors.email.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="phone">{t("phone")} *</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="phone"
-                      type="tel"
-                      {...register("phone")}
-                      placeholder={t("phonePlaceholder")}
-                      className="pl-10"
-                    />
-                  </div>
-                  {errors.phone && (
-                    <p className="text-sm text-red-600 mt-1">
-                      {errors.phone.message}
-                    </p>
-                  )}
-                </div>
-              </div>
             </div>
 
-            {/* Dates de séjour */}
-            <div className="space-y-4">
-              <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label
+                  htmlFor="firstName"
+                  className="text-gray-700 font-medium"
+                >
+                  {t("firstName")} *
+                </Label>
+                <Input
+                  id="firstName"
+                  {...register("firstName")}
+                  placeholder={t("firstNamePlaceholder")}
+                  className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-colors"
+                />
+                {errors.firstName && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.firstName.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="lastName" className="text-gray-700 font-medium">
+                  {t("lastName")} *
+                </Label>
+                <Input
+                  id="lastName"
+                  {...register("lastName")}
+                  placeholder={t("lastNamePlaceholder")}
+                  className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-colors"
+                />
+                {errors.lastName && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.lastName.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-gray-700 font-medium">
+                  {t("email")} *
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Input
+                    id="email"
+                    type="email"
+                    {...register("email")}
+                    placeholder={t("emailPlaceholder")}
+                    className="h-12 pl-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-colors"
+                  />
+                </div>
+                {errors.email && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.email.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-gray-700 font-medium">
+                  {t("phone")} *
+                </Label>
+                <div className="relative">
+                  <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Input
+                    id="phone"
+                    type="tel"
+                    {...register("phone")}
+                    placeholder={t("phonePlaceholder")}
+                    className="h-12 pl-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-colors"
+                  />
+                </div>
+                {errors.phone && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.phone.message}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl">
+                <Calendar className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900">
                 {t("stayDates")}
               </h3>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="checkIn">{t("checkIn")} *</Label>
-                  <Input
-                    id="checkIn"
-                    type="date"
-                    {...register("checkIn")}
-                    disabled={true}
-                    min={format(new Date(stay.startDate), "yyyy-MM-dd")}
-                    max={format(new Date(stay.endDate), "yyyy-MM-dd")}
-                  />
-                  {errors.checkIn && (
-                    <p className="text-sm text-red-600 mt-1">
-                      {errors.checkIn.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="checkOut">{t("checkOut")} *</Label>
-                  <Input
-                    id="checkOut"
-                    type="date"
-                    {...register("checkOut")}
-                    disabled={true}
-                    min={format(new Date(stay.startDate), "yyyy-MM-dd")}
-                    max={format(new Date(stay.endDate), "yyyy-MM-dd")}
-                  />
-                  {errors.checkOut && (
-                    <p className="text-sm text-red-600 mt-1">
-                      {errors.checkOut.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {nights > 0 && (
-                <p className="text-sm text-gray-600 text-center">
-                  {nights} {t("nights")}
-                </p>
-              )}
             </div>
 
-            {/* Sélection et configuration des chambres */}
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                  <Home className="h-5 w-5" />
-                  {t("roomSelection")}
-                </h3>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowRoomSelector(!showRoomSelector)}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  {t("addRoom")}
-                </Button>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="checkIn" className="text-gray-700 font-medium">
+                  {t("checkIn")} *
+                </Label>
+                <Input
+                  id="checkIn"
+                  type="date"
+                  {...register("checkIn")}
+                  disabled={true}
+                  className="h-12 border-2 border-gray-200 rounded-xl bg-gray-50"
+                  min={format(new Date(stay.startDate), "yyyy-MM-dd")}
+                  max={format(new Date(stay.endDate), "yyyy-MM-dd")}
+                />
+                {errors.checkIn && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.checkIn.message}
+                  </p>
+                )}
               </div>
 
-              {/* Sélecteur de chambres */}
-              {showRoomSelector && (
-                <div className="p-4 bg-gray-50 rounded-lg space-y-2">
-                  <p className="text-sm text-gray-600 mb-3">
-                    {t("selectRoomToAdd")}
+              <div className="space-y-2">
+                <Label htmlFor="checkOut" className="text-gray-700 font-medium">
+                  {t("checkOut")} *
+                </Label>
+                <Input
+                  id="checkOut"
+                  type="date"
+                  {...register("checkOut")}
+                  disabled={true}
+                  className="h-12 border-2 border-gray-200 rounded-xl bg-gray-50"
+                  min={format(new Date(stay.startDate), "yyyy-MM-dd")}
+                  max={format(new Date(stay.endDate), "yyyy-MM-dd")}
+                />
+                {errors.checkOut && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.checkOut.message}
                   </p>
+                )}
+              </div>
+            </div>
+
+            {nights > 0 && (
+              <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200/50">
+                <p className="text-center text-blue-800 font-semibold">
+                  {nights} {t("nights")}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl">
+                  <Home className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900">
+                  {t("roomSelection")}
+                </h3>
+              </div>
+
+              <Button
+                type="button"
+                onClick={() => setShowRoomSelector(!showRoomSelector)}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                {t("addRoom")}
+              </Button>
+            </div>
+
+            {showRoomSelector && (
+              <div className="mb-8 p-6 bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl border border-gray-200/50">
+                <p className="text-gray-700 font-medium mb-4">
+                  {t("selectRoomToAdd")}
+                </p>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {stay.hotel.rooms.map((room: any) => (
-                    <Button
+                    <div
                       key={room.id}
-                      type="button"
-                      variant="outline"
-                      className="w-full justify-between"
                       onClick={() => {
                         addRoom(room);
                         setShowRoomSelector(false);
                       }}
+                      className="p-4 bg-white rounded-xl shadow-md border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all cursor-pointer group"
                     >
-                      <span>{room.name}</span>
-                      <span className="text-sm text-gray-600">
-                        {t("capacity")}: {room.capacity}
-                      </span>
-                    </Button>
+                      <div className="flex items-center gap-3 mb-2">
+                        <Bed className="h-5 w-5 text-blue-600 group-hover:scale-110 transition-transform" />
+                        <span className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                          {room.name}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        <span className="font-medium">{t("capacity")}:</span>{" "}
+                        {room.capacity}
+                      </div>
+                    </div>
                   ))}
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Chambres sélectionnées */}
-              {selectedRooms.length > 0 ? (
-                <div className="space-y-4">
-                  {selectedRooms.map(({ roomId, room, instances }) => (
-                    <div
-                      key={roomId}
-                      className="border rounded-lg p-4 space-y-3"
-                    >
-                      <h4 className="font-semibold text-gray-900">
+            {selectedRooms.length > 0 ? (
+              <div className="space-y-6">
+                {selectedRooms.map(({ roomId, room, instances }) => (
+                  <div
+                    key={roomId}
+                    className="p-6 bg-gradient-to-r from-white to-blue-50 rounded-2xl border-2 border-blue-100 shadow-lg"
+                  >
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                        <Crown className="h-5 w-5 text-white" />
+                      </div>
+                      <h4 className="text-xl font-bold text-gray-900">
                         {room.name}
                       </h4>
+                    </div>
 
-                      {instances.map((instance, index) => {
-                        const totalOccupants = getTotalOccupants(instance);
-                        const isOverCapacity = totalOccupants > room.capacity;
+                    {instances.map((instance, index) => {
+                      const totalOccupants = getTotalOccupants(instance);
+                      const isOverCapacity = totalOccupants > room.capacity;
 
-                        return (
-                          <div
-                            key={instance.id}
-                            className={`p-3 bg-gray-50 rounded-lg space-y-3 ${
-                              isOverCapacity ? "border-2 border-red-500" : ""
-                            }`}
-                          >
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm font-medium">
-                                {room.name} #{index + 1}
+                      return (
+                        <div
+                          key={instance.id}
+                          className={`p-4 bg-white rounded-xl border-2 mb-4 ${
+                            isOverCapacity
+                              ? "border-red-300 bg-red-50"
+                              : "border-gray-200"
+                          }`}
+                        >
+                          <div className="flex justify-between items-center mb-4">
+                            <span className="font-semibold text-gray-900">
+                              {room.name} #{index + 1}
+                            </span>
+                            <div className="flex items-center gap-3">
+                              <span
+                                className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                  isOverCapacity
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-blue-100 text-blue-700"
+                                }`}
+                              >
+                                {totalOccupants}/{room.capacity} {t("persons")}
                               </span>
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className={`text-sm ${
-                                    isOverCapacity
-                                      ? "text-red-600 font-bold"
-                                      : "text-gray-600"
-                                  }`}
-                                >
-                                  {totalOccupants}/{room.capacity}{" "}
-                                  {t("persons")}
-                                </span>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    removeRoomInstance(roomId, instance.id)
-                                  }
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  removeRoomInstance(roomId, instance.id)
+                                }
+                                className="text-red-600 hover:bg-red-50"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
                             </div>
+                          </div>
 
-                            {isOverCapacity && (
-                              <p className="text-sm text-red-600">
+                          {isOverCapacity && (
+                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                              <p className="text-sm text-red-700 font-medium">
                                 ⚠️ {t("overCapacityWarning")}
                               </p>
-                            )}
-
-                            <div className="space-y-2">
-                              {ageRanges.map((ageRange: any) => {
-                                const count =
-                                  instance.occupants[ageRange.id] || 0;
-                                const pricing = room.roomPricings.find(
-                                  (rp: any) => rp.ageRangeId === ageRange.id
-                                );
-
-                                return (
-                                  <div
-                                    key={ageRange.id}
-                                    className="flex items-center justify-between"
-                                  >
-                                    <div className="flex-1">
-                                      <p className="text-sm font-medium">
-                                        {ageRange.name}
-                                      </p>
-                                      {pricing && (
-                                        <p className="text-xs text-gray-600">
-                                          {pricing.price}€ {t("perStay")}
-                                        </p>
-                                      )}
-                                    </div>
-
-                                    <div className="flex items-center gap-2">
-                                      <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="icon"
-                                        className="h-8 w-8"
-                                        onClick={() =>
-                                          updateOccupants(
-                                            roomId,
-                                            instance.id,
-                                            ageRange.id,
-                                            Math.max(0, count - 1)
-                                          )
-                                        }
-                                        disabled={count === 0}
-                                      >
-                                        <Minus className="h-3 w-3" />
-                                      </Button>
-
-                                      <span className="w-8 text-center">
-                                        {count}
-                                      </span>
-
-                                      <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="icon"
-                                        className="h-8 w-8"
-                                        onClick={() =>
-                                          updateOccupants(
-                                            roomId,
-                                            instance.id,
-                                            ageRange.id,
-                                            count + 1
-                                          )
-                                        }
-                                        disabled={
-                                          totalOccupants >= room.capacity
-                                        }
-                                      >
-                                        <Plus className="h-3 w-3" />
-                                      </Button>
-                                    </div>
-                                  </div>
-                                );
-                              })}
                             </div>
+                          )}
 
-                            {/* Prix pour cette instance */}
-                            {getTotalOccupants(instance) > 0 && (
-                              <div className="pt-2 border-t text-sm text-right">
-                                <span className="text-gray-600">
-                                  {t("subtotal")}:{" "}
+                          <div className="grid gap-4">
+                            {ageRanges.map((ageRange: any) => {
+                              const count =
+                                instance.occupants[ageRange.id] || 0;
+                              const pricing = room.roomPricings.find(
+                                (rp: any) => rp.ageRangeId === ageRange.id
+                              );
+
+                              return (
+                                <div
+                                  key={ageRange.id}
+                                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                                >
+                                  <div className="flex-1">
+                                    <p className="font-medium text-gray-900">
+                                      {ageRange.name}
+                                    </p>
+                                    {pricing && (
+                                      <p className="text-sm text-blue-600 font-medium">
+                                        {pricing.price}€ {t("perStay")}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-8 w-8 p-0"
+                                      onClick={() =>
+                                        updateOccupants(
+                                          roomId,
+                                          instance.id,
+                                          ageRange.id,
+                                          Math.max(0, count - 1)
+                                        )
+                                      }
+                                      disabled={count === 0}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+
+                                    <span className="w-8 text-center font-semibold">
+                                      {count}
+                                    </span>
+
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-8 w-8 p-0"
+                                      onClick={() =>
+                                        updateOccupants(
+                                          roomId,
+                                          instance.id,
+                                          ageRange.id,
+                                          count + 1
+                                        )
+                                      }
+                                      disabled={totalOccupants >= room.capacity}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {getTotalOccupants(instance) > 0 && (
+                            <div className="mt-4 pt-4 border-t border-gray-200">
+                              <div className="flex justify-between items-center">
+                                <span className="text-gray-600 font-medium">
+                                  {t("subtotal")}:
                                 </span>
-                                <span className="font-semibold">
+                                <span className="text-xl font-bold text-blue-600">
                                   {Object.entries(instance.occupants)
                                     .reduce((sum, [ageRangeId, count]) => {
                                       const pricing = room.roomPricings.find(
@@ -686,83 +708,100 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
                                   €
                                 </span>
                               </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
 
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => addRoom(room)}
-                        className="w-full"
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        {t("addAnotherRoom", { roomName: room.name })}
-                      </Button>
-                    </div>
-                  ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => addRoom(room)}
+                      className="w-full mt-2 border-2 border-dashed border-blue-300 hover:border-blue-500 hover:bg-blue-50"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      {t("addAnotherRoom", { roomName: room.name })}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="p-6 bg-gray-100 rounded-full inline-flex mb-4">
+                  <Home className="h-12 w-12 text-gray-400" />
                 </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <Home className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                  <p>{t("noRoomsSelected")}</p>
-                </div>
-              )}
+                <p className="text-gray-500 text-lg">{t("noRoomsSelected")}</p>
+              </div>
+            )}
 
-              {/* Résumé */}
-              {selectedRooms.length > 0 && (
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-sm text-gray-600">
-                        {selectedRooms.reduce(
-                          (sum, r) => sum + r.instances.length,
-                          0
-                        )}{" "}
-                        {t("rooms")}, {totalParticipants} {t("persons")}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-600">{t("totalPrice")}</p>
-                      <p className="text-2xl font-bold text-blue-600">
-                        {totalPrice.toFixed(2)}€
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {t("forEntireStay")}
-                      </p>
-                    </div>
+            {selectedRooms.length > 0 && (
+              <div className="mt-8 p-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl text-white shadow-xl">
+                <div className="flex justify-between items-center">
+                  <div className="space-y-1">
+                    <p className="text-blue-100">
+                      {selectedRooms.reduce(
+                        (sum, r) => sum + r.instances.length,
+                        0
+                      )}{" "}
+                      {t("rooms")}, {totalParticipants} {t("persons")}
+                    </p>
+                    <p className="text-sm text-blue-200">
+                      {t("forEntireStay")}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-blue-200">{t("totalPrice")}</p>
+                    <p className="text-3xl font-bold">
+                      {totalPrice.toFixed(2)}€
+                    </p>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl">
+                <FileText className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900">
+                {t("specialRequests")}
+              </h3>
             </div>
 
-            {/* Demandes spéciales */}
-            <div className="space-y-4">
-              <Label htmlFor="specialRequests">{t("specialRequests")}</Label>
-              <textarea
-                id="specialRequests"
-                {...register("specialRequests")}
-                placeholder={t("specialRequestsPlaceholder")}
-                rows={4}
-                className="w-full px-3 py-2 text-gray-700 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-              />
-            </div>
+            <textarea
+              id="specialRequests"
+              {...register("specialRequests")}
+              placeholder={t("specialRequestsPlaceholder")}
+              rows={4}
+              className="w-full p-4 border-2 border-gray-200 focus:border-blue-500 rounded-xl resize-none transition-colors"
+            />
+          </div>
 
-            <Button
-              type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-              disabled={
-                isSubmitting ||
-                selectedRooms.length === 0 ||
-                totalParticipants === 0
-              }
-            >
-              {isSubmitting ? t("submitting") : t("submit")}
-            </Button>
-          </form>
-        </div>
+          <Button
+            type="submit"
+            className="w-full h-14 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white text-lg font-semibold shadow-xl rounded-2xl group"
+            disabled={
+              isSubmitting ||
+              selectedRooms.length === 0 ||
+              totalParticipants === 0
+            }
+          >
+            {isSubmitting ? (
+              <div className="flex items-center gap-2">
+                <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+                {t("submitting")}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                {t("submit")}
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            )}
+          </Button>
+        </form>
       </div>
     </section>
   );

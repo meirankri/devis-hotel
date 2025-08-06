@@ -1,7 +1,7 @@
-import { notFound } from 'next/navigation';
-import { StayDetail } from '@/components/public/StayDetail';
-import { QuoteFormV2 } from '@/components/public/QuoteFormV2';
-import { prisma } from '@/lib/database/db';
+import { notFound } from "next/navigation";
+import { StayDetail } from "@/components/public/StayDetail";
+import { QuoteFormV2 } from "@/components/public/QuoteFormV2";
+import { prisma } from "@/lib/database/db";
 
 interface StayPageProps {
   params: Promise<{
@@ -13,8 +13,7 @@ interface StayPageProps {
 
 export default async function StayPage({ params }: StayPageProps) {
   const { slug, orga } = await params;
-  
-  // D'abord, trouvons l'organisation
+
   const organization = await prisma.organization.findUnique({
     where: { slug: orga },
   });
@@ -24,9 +23,9 @@ export default async function StayPage({ params }: StayPageProps) {
   }
 
   const stay = await prisma.stay.findFirst({
-    where: { 
+    where: {
       slug,
-      organizationId: organization.id
+      organizationId: organization.id,
     },
     include: {
       hotel: {
@@ -50,14 +49,13 @@ export default async function StayPage({ params }: StayPageProps) {
     notFound();
   }
 
-  // Convertir les Decimals en nombres pour éviter les erreurs de sérialisation
   const serializedStay = {
     ...stay,
     hotel: {
       ...stay.hotel,
-      rooms: stay.hotel.rooms.map(room => ({
+      rooms: stay.hotel.rooms.map((room) => ({
         ...room,
-        roomPricings: room.roomPricings.map(rp => ({
+        roomPricings: room.roomPricings.map((rp) => ({
           ...rp,
           price: Number(rp.price),
         })),
@@ -66,7 +64,7 @@ export default async function StayPage({ params }: StayPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50">
       <StayDetail stay={serializedStay} />
       <QuoteFormV2 stay={serializedStay} />
     </div>
