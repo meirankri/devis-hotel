@@ -1,6 +1,6 @@
-import { notFound } from 'next/navigation';
-import { prisma } from '@/lib/database/db';
-import { QuoteDetailView } from '@/components/public/QuoteDetailView';
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/database/db";
+import { QuoteDetailView } from "@/components/public/QuoteDetailView";
 
 interface QuotePageProps {
   params: Promise<{
@@ -11,7 +11,7 @@ interface QuotePageProps {
 
 export default async function QuotePage({ params }: QuotePageProps) {
   const { id } = await params;
-  
+
   const quote = await prisma.quote.findUnique({
     where: { id },
     include: {
@@ -55,17 +55,19 @@ export default async function QuotePage({ params }: QuotePageProps) {
   const serializedQuote = {
     ...quote,
     totalPrice: quote.totalPrice ? Number(quote.totalPrice) : null,
-    quoteRooms: quote.quoteRooms.map(qr => ({
+    quoteRooms: quote.quoteRooms.map((qr) => ({
       ...qr,
       room: {
         ...qr.room,
-        roomPricings: qr.room.roomPricings.map(rp => ({
+        roomPricings: qr.room.roomPricings.map((rp) => ({
           ...rp,
           price: Number(rp.price),
         })),
       },
     })),
   };
+
+  console.log("serializedQuote", JSON.stringify(quote));
 
   return (
     <div className="min-h-screen bg-gray-50">

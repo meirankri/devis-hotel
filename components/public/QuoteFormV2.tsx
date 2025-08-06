@@ -27,6 +27,7 @@ import { fr, enUS } from "date-fns/locale";
 import { useLocale } from "next-intl";
 import { toast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
+import { calculatePriceFromRoomSelections } from "@/utils/priceCalculator";
 
 interface QuoteFormProps {
   stay: any;
@@ -203,23 +204,7 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
 
   // Calculer le prix total
   const calculateTotalPrice = (): number => {
-    let total = 0;
-
-    selectedRooms.forEach(({ room, instances }) => {
-      instances.forEach((instance) => {
-        Object.entries(instance.occupants).forEach(([ageRangeId, count]) => {
-          const pricing = room.roomPricings.find(
-            (rp: any) => rp.ageRangeId === ageRangeId
-          );
-          if (pricing && count > 0) {
-            // Le prix est pour tout le séjour, pas par nuit
-            total += pricing.price * count;
-          }
-        });
-      });
-    });
-
-    return total;
+    return calculatePriceFromRoomSelections(selectedRooms);
   };
 
   const totalPrice = calculateTotalPrice();
@@ -243,7 +228,7 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
         title: t("successTitle"),
         description: t("successMessage"),
       });
-      setSubmittedQuoteId(data.id);
+      setSubmittedQuoteId(data?.id || null);
     },
     onError: (error) => {
       toast({

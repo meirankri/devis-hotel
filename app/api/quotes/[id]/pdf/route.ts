@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/database/db';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/database/db";
+import { calculatePriceFromQuoteData } from "@/utils/priceCalculator";
 
 export async function GET(
   request: NextRequest,
@@ -7,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params;
-    
+
     const quote = await prisma.quote.findUnique({
       where: { id },
       include: {
@@ -39,36 +40,30 @@ export async function GET(
     });
 
     if (!quote) {
-      return NextResponse.json({ error: 'Quote not found' }, { status: 404 });
+      return NextResponse.json({ error: "Quote not found" }, { status: 404 });
     }
 
-    // Calculer le prix total
+    // Calculer le prix total avec l'utilitaire
+    const formattedQuoteRooms = quote.quoteRooms.map((quoteRoom) => ({
+      ...quoteRoom,
+      room: {
+        ...quoteRoom.room,
+        roomPricings: quoteRoom.room.roomPricings.map((pricing) => ({
+          ...pricing,
+          price: pricing.price.toNumber(),
+        })),
+      },
+    }));
+
+    const totalPrice = calculatePriceFromQuoteData(
+      quote.quoteParticipants,
+      formattedQuoteRooms
+    );
+
     const nights = Math.ceil(
       (new Date(quote.checkOut).getTime() - new Date(quote.checkIn).getTime()) /
         (1000 * 60 * 60 * 24)
     );
-
-    let totalPrice = 0;
-
-    quote.quoteParticipants.forEach((participant) => {
-      if (participant.count > 0) {
-        const roomPrices: number[] = [];
-        
-        quote.quoteRooms.forEach((qr) => {
-          const pricing = qr.room.roomPricings.find(
-            (rp) => rp.ageRangeId === participant.ageRangeId
-          );
-          if (pricing) {
-            roomPrices.push(Number(pricing.price) * qr.quantity);
-          }
-        });
-
-        if (roomPrices.length > 0) {
-          const avgPrice = roomPrices.reduce((sum, price) => sum + price, 0) / roomPrices.length;
-          totalPrice += avgPrice * participant.count * nights;
-        }
-      }
-    });
 
     // Générer le HTML pour le PDF
     const html = `
@@ -156,18 +151,44 @@ export async function GET(
             padding: 5px 15px;
             border-radius: 20px;
             font-weight: bold;
-            ${quote.status === 'PENDING' ? 'background-color: #fef3c7; color: #d97706;' : ''}
-            ${quote.status === 'ACCEPTED' ? 'background-color: #d1fae5; color: #059669;' : ''}
-            ${quote.status === 'REJECTED' ? 'background-color: #fee2e2; color: #dc2626;' : ''}
-            ${quote.status === 'EXPIRED' ? 'background-color: #e5e7eb; color: #6b7280;' : ''}
+            ${
+              quote.status === "PENDING"
+                ? "background-color: #fef3c7; color: #d97706;"
+                : ""
+            }
+            ${
+              quote.status === "ACCEPTED"
+                ? "background-color: #d1fae5; color: #059669;"
+                : ""
+            }
+            ${
+              quote.status === "REJECTED"
+                ? "background-color: #fee2e2; color: #dc2626;"
+                : ""
+            }
+            ${
+              quote.status === "EXPIRED"
+                ? "background-color: #e5e7eb; color: #6b7280;"
+                : ""
+            }
         }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>Devis #${quote.quoteNumber}</h1>
-        <p>Date de création : ${new Date(quote.createdAt).toLocaleDateString('fr-FR')}</p>
-        <span class="status">${quote.status === 'PENDING' ? 'En attente' : quote.status === 'ACCEPTED' ? 'Accepté' : quote.status === 'REJECTED' ? 'Refusé' : 'Expiré'}</span>
+        <p>Date de création : ${new Date(quote.createdAt).toLocaleDateString(
+          "fr-FR"
+        )}</p>
+        <span class="status">${
+          quote.status === "PENDING"
+            ? "En attente"
+            : quote.status === "ACCEPTED"
+            ? "Accepté"
+            : quote.status === "REJECTED"
+            ? "Refusé"
+            : "Expiré"
+        }</span>
     </div>
 
     <div class="section">
@@ -175,7 +196,9 @@ export async function GET(
         <div class="info-grid">
             <div class="info-item">
                 <div class="info-label">Nom complet</div>
-                <div class="info-value">${quote.firstName} ${quote.lastName}</div>
+                <div class="info-value">${quote.firstName} ${
+      quote.lastName
+    }</div>
             </div>
             <div class="info-item">
                 <div class="info-label">Email</div>
@@ -202,24 +225,30 @@ export async function GET(
             <div class="info-item">
                 <div class="info-label">Dates</div>
                 <div class="info-value">
-                    Du ${new Date(quote.checkIn).toLocaleDateString('fr-FR')} 
-                    au ${new Date(quote.checkOut).toLocaleDateString('fr-FR')}
+                    Du ${new Date(quote.checkIn).toLocaleDateString("fr-FR")} 
+                    au ${new Date(quote.checkOut).toLocaleDateString("fr-FR")}
                 </div>
             </div>
             <div class="info-item">
                 <div class="info-label">Nombre de nuits</div>
                 <div class="info-value">${nights} nuits</div>
             </div>
-            ${quote.stay.organization ? `
+            ${
+              quote.stay.organization
+                ? `
             <div class="info-item">
                 <div class="info-label">Organisation</div>
                 <div class="info-value">${quote.stay.organization.name}</div>
             </div>
-            ` : ''}
+            `
+                : ""
+            }
         </div>
     </div>
 
-    ${quote.quoteRooms.length > 0 ? `
+    ${
+      quote.quoteRooms.length > 0
+        ? `
     <div class="section">
         <h2>Chambres Sélectionnées</h2>
         <table class="table">
@@ -231,17 +260,23 @@ export async function GET(
                 </tr>
             </thead>
             <tbody>
-                ${quote.quoteRooms.map((qr: any) => `
+                ${quote.quoteRooms
+                  .map(
+                    (qr: any) => `
                 <tr>
                     <td>${qr.room.name}</td>
                     <td>${qr.room.capacity} personnes</td>
                     <td>${qr.quantity}</td>
                 </tr>
-                `).join('')}
+                `
+                  )
+                  .join("")}
             </tbody>
         </table>
     </div>
-    ` : ''}
+    `
+        : ""
+    }
 
     <div class="section">
         <h2>Participants</h2>
@@ -254,25 +289,37 @@ export async function GET(
                 </tr>
             </thead>
             <tbody>
-                ${quote.quoteParticipants.filter((p: any) => p.count > 0).map((participant: any) => `
+                ${quote.quoteParticipants
+                  .filter((p: any) => p.count > 0)
+                  .map(
+                    (participant: any) => `
                 <tr>
                     <td>${participant.ageRange.name}</td>
-                    <td>${participant.ageRange.minAge !== null && participant.ageRange.maxAge !== null 
-                        ? `${participant.ageRange.minAge}-${participant.ageRange.maxAge} ans` 
-                        : 'N/A'}</td>
+                    <td>${
+                      participant.ageRange.minAge !== null &&
+                      participant.ageRange.maxAge !== null
+                        ? `${participant.ageRange.minAge}-${participant.ageRange.maxAge} ans`
+                        : "N/A"
+                    }</td>
                     <td>${participant.count}</td>
                 </tr>
-                `).join('')}
+                `
+                  )
+                  .join("")}
             </tbody>
         </table>
     </div>
 
-    ${quote.specialRequests ? `
+    ${
+      quote.specialRequests
+        ? `
     <div class="section">
         <h2>Demandes Spéciales</h2>
         <p>${quote.specialRequests}</p>
     </div>
-    ` : ''}
+    `
+        : ""
+    }
 
     <div class="total">
         Prix Total Estimé : ${totalPrice.toFixed(2)} €
@@ -280,7 +327,9 @@ export async function GET(
 
     <div class="footer">
         <p>Ce devis est une estimation. Le prix final sera confirmé par notre équipe.</p>
-        <p>Document généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</p>
+        <p>Document généré le ${new Date().toLocaleDateString(
+          "fr-FR"
+        )} à ${new Date().toLocaleTimeString("fr-FR")}</p>
     </div>
 </body>
 </html>
@@ -291,14 +340,14 @@ export async function GET(
     return new NextResponse(html, {
       status: 200,
       headers: {
-        'Content-Type': 'text/html; charset=utf-8',
-        'Content-Disposition': `attachment; filename="devis-${quote.quoteNumber}.html"`,
+        "Content-Type": "text/html; charset=utf-8",
+        "Content-Disposition": `attachment; filename="devis-${quote.quoteNumber}.html"`,
       },
     });
   } catch (error) {
-    console.error('Error generating PDF:', error);
+    console.error("Error generating PDF:", error);
     return NextResponse.json(
-      { error: 'Failed to generate PDF' },
+      { error: "Failed to generate PDF" },
       { status: 500 }
     );
   }
