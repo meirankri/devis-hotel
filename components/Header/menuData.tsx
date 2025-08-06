@@ -28,13 +28,6 @@ const menuData: Menu[] = [
     userOnly: true,
   },
   {
-    id: 5,
-    title: "ageRanges",
-    path: "/dashboard/age-ranges",
-    newTab: false,
-    userOnly: true,
-  },
-  {
     id: 6,
     title: "stays",
     path: "/dashboard/stays",

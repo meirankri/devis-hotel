@@ -1,9 +1,8 @@
-import { z } from 'zod';
-import { TRPCError } from '@trpc/server';
-import { protectedProcedure, publicProcedure, router } from '@/server/trpc';
-import { createQuoteRequestSchema } from '@/application/dto/quote.dto';
-import { prisma } from '@/lib/database/db';
-import { randomUUID } from 'crypto';
+import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+import { protectedProcedure, publicProcedure, router } from "@/server/trpc";
+import { createQuoteRequestSchema } from "@/application/dto/quote.dto";
+import { prisma } from "@/lib/database/db";
 
 export const quotesRouter = router({
   getAll: protectedProcedure.query(async () => {
@@ -12,6 +11,7 @@ export const quotesRouter = router({
         stay: {
           include: {
             hotel: true,
+            organization: true,
           },
         },
         quoteParticipants: {
@@ -19,8 +19,26 @@ export const quotesRouter = router({
             ageRange: true,
           },
         },
+        quoteRooms: {
+          include: {
+            room: {
+              include: {
+                roomPricings: {
+                  include: {
+                    ageRange: true,
+                  },
+                },
+              },
+            },
+            quoteRoomOccupants: {
+              include: {
+                ageRange: true,
+              },
+            },
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     return quotes;
@@ -77,8 +95,8 @@ export const quotesRouter = router({
 
       if (!quote) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Devis non trouvé',
+          code: "NOT_FOUND",
+          message: "Devis non trouvé",
         });
       }
 
@@ -95,44 +113,49 @@ export const quotesRouter = router({
 
       if (!stay || !stay.isActive) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Séjour non disponible',
+          code: "NOT_FOUND",
+          message: "Séjour non disponible",
         });
       }
 
       // Vérifier les dates
       const checkIn = new Date(input.checkIn);
       const checkOut = new Date(input.checkOut);
-      
+
       if (checkIn < stay.startDate || checkOut > stay.endDate) {
         throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Les dates sélectionnées sont en dehors de la période du séjour',
+          code: "BAD_REQUEST",
+          message:
+            "Les dates sélectionnées sont en dehors de la période du séjour",
         });
       }
 
       // Si réservation partielle
       if (stay.allowPartialBooking) {
-        const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
-        
+        const nights = Math.ceil(
+          (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
         if (stay.minDays && nights < stay.minDays) {
           throw new TRPCError({
-            code: 'BAD_REQUEST',
+            code: "BAD_REQUEST",
             message: `Minimum ${stay.minDays} nuits requises`,
           });
         }
-        
+
         if (stay.maxDays && nights > stay.maxDays) {
           throw new TRPCError({
-            code: 'BAD_REQUEST',
+            code: "BAD_REQUEST",
             message: `Maximum ${stay.maxDays} nuits autorisées`,
           });
         }
       }
 
       // Créer le devis
-      const quoteNumber = `DEV-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
-      
+      const quoteNumber = `DEV-${new Date().getFullYear()}-${Date.now()
+        .toString()
+        .slice(-6)}`;
+
       const quote = await prisma.quote.create({
         data: {
           quoteNumber,
@@ -144,11 +167,11 @@ export const quotesRouter = router({
           checkIn,
           checkOut,
           specialRequests: input.specialRequests,
-          status: 'PENDING',
+          status: "PENDING",
           quoteParticipants: {
             create: input.participants
-              .filter(p => p.count > 0)
-              .map(p => ({
+              .filter((p) => p.count > 0)
+              .map((p) => ({
                 ageRangeId: p.ageRangeId,
                 count: p.count,
               })),
@@ -183,8 +206,8 @@ export const quotesRouter = router({
           if (room.occupants && room.occupants.length > 0) {
             await prisma.quoteRoomOccupant.createMany({
               data: room.occupants
-                .filter(o => o.count > 0)
-                .map(o => ({
+                .filter((o) => o.count > 0)
+                .map((o) => ({
                   quoteRoomId: quoteRoom.id,
                   ageRangeId: o.ageRangeId,
                   count: o.count,
@@ -227,10 +250,12 @@ export const quotesRouter = router({
     }),
 
   updateStatus: protectedProcedure
-    .input(z.object({
-      id: z.string().uuid(),
-      status: z.enum(['PENDING', 'ACCEPTED', 'REJECTED', 'EXPIRED']),
-    }))
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        status: z.enum(["PENDING", "ACCEPTED", "REJECTED", "EXPIRED"]),
+      })
+    )
     .mutation(async ({ input }) => {
       const quote = await prisma.quote.findUnique({
         where: { id: input.id },
@@ -238,8 +263,8 @@ export const quotesRouter = router({
 
       if (!quote) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Devis non trouvé',
+          code: "NOT_FOUND",
+          message: "Devis non trouvé",
         });
       }
 
@@ -258,8 +283,8 @@ export const quotesRouter = router({
 
       if (!quote) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Devis non trouvé',
+          code: "NOT_FOUND",
+          message: "Devis non trouvé",
         });
       }
 

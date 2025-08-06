@@ -20,6 +20,7 @@ import { fr, enUS } from "date-fns/locale";
 import { useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { calculateQuotePrice } from "@/utils/priceCalculator";
 
 export function QuotesList() {
   const t = useTranslations("Quotes");
@@ -153,6 +154,10 @@ export function QuotesList() {
             0
           );
 
+          console.log("quote", quote);
+
+          const totalPrice = calculateQuotePrice(quote);
+
           return (
             <div
               key={quote.id}
@@ -190,11 +195,7 @@ export function QuotesList() {
 
                     <div className="flex items-center gap-2">
                       <Euro className="h-4 w-4" />
-                      <span className="font-semibold">
-                        {quote.totalPrice
-                          ? `${quote.totalPrice.toNumber()}€`
-                          : t("priceNotSet")}
-                      </span>
+                      <span className="font-semibold">{totalPrice}€</span>
                     </div>
                   </div>
 
