@@ -1,0 +1,10 @@
+{
+  "buildCommand": "npm run vercel-build",
+  "framework": "nextjs",
+  "installCommand": "yarn install",
+  "functions": {
+    "app/**/*.tsx": {
+      "maxDuration": 30
+    }
+  }
+}

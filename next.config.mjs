@@ -19,11 +19,26 @@ const nextConfig = {
       },
     ],
   },
-  webpack(config) {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+  },
+  webpack(config, { isServer }) {
     config.module.rules.push({
       test: /\.svg$/,
       use: ["@svgr/webpack"],
     });
+
+    // Fix for client-reference-manifest issue
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
+    }
 
     return config;
   },
