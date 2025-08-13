@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { publicProcedure } from "../trpc";
-import { sendEmail } from "@/lib/sendGrid";
+import { sendEmail } from "@/lib/brevoEmail";
 import env from "@/lib/env";
 import { logger } from "@/utils/logger";
 

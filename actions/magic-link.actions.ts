@@ -3,7 +3,7 @@ import { db } from "@/lib/database/db";
 import { SignInSchema } from "@/types";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
-import { sendEmail } from "@/lib/sendGrid";
+import { sendEmail } from "@/lib/brevoEmail";
 import { logger } from "@/utils/logger";
 import { addFreeTrialSubscription } from "@/lib/lucia/auth";
 import { verifyRecaptcha } from "@/utils/recaptcha";
@@ -51,14 +51,14 @@ export const signIn = async (values: z.infer<typeof SignInSchema>) => {
   try {
     SignInSchema.parse(values);
 
-    const isVerified = await verifyRecaptcha();
-    if (!isVerified) {
-      return {
-        success: false,
-        message: "reCAPTCHA verification failed",
-        data: null,
-      };
-    }
+    // const isVerified = await verifyRecaptcha();
+    // if (!isVerified) {
+    //   return {
+    //     success: false,
+    //     message: "reCAPTCHA verification failed",
+    //     data: null,
+    //   };
+    // }
 
     const existedUser = await db.user.findUnique({
       where: { email: values.email },

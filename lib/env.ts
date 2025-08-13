@@ -50,6 +50,8 @@ const envSchema = z.object({
   EMAIL_SERVER_PORT: z.number().int().positive().optional(),
   EMAIL_FROM: z.string().email().optional().or(z.literal("")),
 
+  BREVO_API_KEY: z.string().optional(),
+
   SENDGRID_API_KEY: z.string().optional(),
 
   // Variables Stripe
@@ -95,6 +97,7 @@ const processEnv = {
     ? parseInt(process.env.EMAIL_SERVER_PORT, 10)
     : undefined,
   EMAIL_FROM: process.env.EMAIL_FROM,
+  BREVO_API_KEY: process.env.BREVO_API_KEY,
   SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
