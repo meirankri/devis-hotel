@@ -2,8 +2,13 @@
 import Image from "next/image";
 import { Link } from "@/i18n.config";
 import UserMenu from "./UserMenu";
+import { ExtendedUser } from "@/types";
+import MenuLink from "./MenuLink";
+import { useSession } from "@/hooks/useSession";
 
 const ConnectedHeader = () => {
+  const user = useSession();
+
   return (
     <header className="fixed bg-gradient-to-r from-blue-900/90 via-purple-800/80 to-indigo-900/90 top-0 left-0 w-full shadow-md z-50">
       <div className="container mx-auto px-4">
@@ -17,6 +22,13 @@ const ConnectedHeader = () => {
               className="w-auto h-8"
             />
           </Link>
+          <MenuLink
+            navbarOpen={false}
+            user={user as ExtendedUser}
+            classNames={{
+              link: "text-white",
+            }}
+          />
           <UserMenu />
         </div>
       </div>

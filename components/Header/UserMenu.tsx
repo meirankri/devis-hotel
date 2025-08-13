@@ -67,7 +67,7 @@ const UserMenu = () => {
             </a>
           </MenuItem>
         )}
-        <UserQuotaFeatures />
+        {/* <UserQuotaFeatures /> */}
       </MenuItems>
     </Menu>
   );

@@ -533,17 +533,34 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
                         addRoom(room);
                         setShowRoomSelector(false);
                       }}
-                      className="p-4 bg-white rounded-xl shadow-md border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all cursor-pointer group"
+                      className="bg-white rounded-xl shadow-md border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all cursor-pointer group overflow-hidden"
                     >
-                      <div className="flex items-center gap-3 mb-2">
-                        <Bed className="h-5 w-5 text-blue-600 group-hover:scale-110 transition-transform" />
-                        <span className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                          {room.name}
-                        </span>
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">{t("capacity")}:</span>{" "}
-                        {room.capacity}
+                      {room.imageUrl && (
+                        <div className="h-32 w-full overflow-hidden">
+                          <img
+                            src={room.imageUrl}
+                            alt={room.name}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          />
+                        </div>
+                      )}
+                      <div className="p-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <Bed className="h-5 w-5 text-blue-600 group-hover:scale-110 transition-transform" />
+                          <span className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                            {room.name}
+                          </span>
+                        </div>
+                        {room.description && (
+                          <div 
+                            className="text-sm text-gray-600 mb-2 line-clamp-2"
+                            dangerouslySetInnerHTML={{ __html: room.description }}
+                          />
+                        )}
+                        <div className="text-sm text-gray-600">
+                          <span className="font-medium">{t("capacity")}:</span>{" "}
+                          {room.capacity}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -556,16 +573,32 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
                 {selectedRooms.map(({ roomId, room, instances }) => (
                   <div
                     key={roomId}
-                    className="p-6 bg-gradient-to-r from-white to-blue-50 rounded-2xl border-2 border-blue-100 shadow-lg"
+                    className="bg-gradient-to-r from-white to-blue-50 rounded-2xl border-2 border-blue-100 shadow-lg overflow-hidden"
                   >
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
-                        <Crown className="h-5 w-5 text-white" />
+                    {room.imageUrl && (
+                      <div className="h-48 w-full overflow-hidden">
+                        <img
+                          src={room.imageUrl}
+                          alt={room.name}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                      <h4 className="text-xl font-bold text-gray-900">
-                        {room.name}
-                      </h4>
-                    </div>
+                    )}
+                    <div className="p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                          <Crown className="h-5 w-5 text-white" />
+                        </div>
+                        <h4 className="text-xl font-bold text-gray-900">
+                          {room.name}
+                        </h4>
+                      </div>
+                      {room.description && (
+                        <div 
+                          className="text-sm text-gray-600 mb-4 prose prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{ __html: room.description }}
+                        />
+                      )}
 
                     {instances.map((instance, index) => {
                       const totalOccupants = getTotalOccupants(instance);
@@ -723,6 +756,7 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
                       <Plus className="h-4 w-4 mr-2" />
                       {t("addAnotherRoom", { roomName: room.name })}
                     </Button>
+                    </div>
                   </div>
                 ))}
               </div>
