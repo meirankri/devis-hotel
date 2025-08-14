@@ -45,21 +45,42 @@ export default async function StayPage({ params }: StayPageProps) {
     },
   });
 
-  if (!stay || !stay.isActive) {
+  if (!stay || !stay.isActive || !stay.organization) {
     notFound();
   }
 
   const serializedStay = {
     ...stay,
+    organizationId: stay.organizationId || organization.id, // Ensure organizationId is not null
+    startDate: stay.startDate.toISOString(),
+    endDate: stay.endDate.toISOString(),
+    createdAt: stay.createdAt.toISOString(),
+    updatedAt: stay.updatedAt.toISOString(),
     hotel: {
       ...stay.hotel,
+      createdAt: stay.hotel.createdAt.toISOString(),
+      updatedAt: stay.hotel.updatedAt.toISOString(),
       rooms: stay.hotel.rooms.map((room) => ({
         ...room,
+        createdAt: room.createdAt.toISOString(),
+        updatedAt: room.updatedAt.toISOString(),
         roomPricings: room.roomPricings.map((rp) => ({
           ...rp,
           price: Number(rp.price),
+          createdAt: rp.createdAt.toISOString(),
+          updatedAt: rp.updatedAt.toISOString(),
+          ageRange: {
+            ...rp.ageRange,
+            createdAt: rp.ageRange.createdAt.toISOString(),
+            updatedAt: rp.ageRange.updatedAt.toISOString(),
+          },
         })),
       })),
+    },
+    organization: {
+      ...stay.organization,
+      createdAt: stay.organization.createdAt.toISOString(),
+      updatedAt: stay.organization.updatedAt.toISOString(),
     },
   };
 

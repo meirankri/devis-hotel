@@ -297,6 +297,11 @@
             "roomSelection": "Sélection des chambres",
             "capacity": "Capacité",
             "totalRooms": "Total chambres",
+            "totalCapacity": "Capacité totale",
+            "capacityWarning": "Le nombre de personnes dépasse la capacité totale de l'hôtel",
+            "maxCapacity": "capacité max",
+            "continueToRooms": "Continuer vers les chambres",
+            "noRoomsAvailable": "Veuillez d'abord sélectionner le nombre de participants",
             "participants": "Participants",
             "years": "ans",
             "total": "Total",
@@ -324,7 +329,8 @@
             "noRoomsSelected": "Aucune chambre sélectionnée",
             "totalPrice": "Prix total",
             "forEntireStay": "pour tout le séjour",
-            "overCapacityWarning": "Capacité maximale dépassée !"
+            "overCapacityWarning": "Capacité maximale dépassée !",
+            "roomsWillBeFiltered": "Les chambres sont filtrées selon le nombre de participants"
         },
         "QuoteDetail": {
             "title": "Devis",

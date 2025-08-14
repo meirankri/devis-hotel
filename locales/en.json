@@ -240,6 +240,11 @@
             "roomSelection": "Room selection",
             "capacity": "Capacity",
             "totalRooms": "Total rooms",
+            "totalCapacity": "Total capacity",
+            "capacityWarning": "Number of people exceeds hotel total capacity",
+            "maxCapacity": "max capacity",
+            "noRoomsAvailable": "Please first select the number of participants",
+            "continueToRooms": "Continue to rooms",
             "years": "years",
             "total": "Total",
             "persons": "persons",
@@ -266,7 +271,8 @@
             "noRoomsSelected": "No room selected",
             "totalPrice": "Total price",
             "forEntireStay": "for the entire stay",
-            "overCapacityWarning": "Maximum capacity exceeded!"
+            "overCapacityWarning": "Maximum capacity exceeded!",
+            "roomsWillBeFiltered": "Rooms are filtered based on the number of participants"
         },
         "QuoteDetail": {
             "title": "Quote",

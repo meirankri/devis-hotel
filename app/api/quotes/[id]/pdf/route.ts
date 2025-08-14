@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/database/db";
-import { calculatePriceFromQuoteData } from "@/utils/priceCalculator";
+import { calculateQuotePrice } from "@/utils/priceCalculator";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Prisma } from "@prisma/client";
@@ -28,6 +28,11 @@ type QuoteWithRelations = Prisma.QuoteGetPayload<{
                 ageRange: true;
               };
             };
+          };
+        };
+        quoteRoomOccupants: {
+          include: {
+            ageRange: true;
           };
         };
       };
@@ -67,6 +72,11 @@ export async function GET(
                 },
               },
             },
+            quoteRoomOccupants: {
+              include: {
+                ageRange: true,
+              },
+            },
           },
         },
       },
@@ -88,10 +98,11 @@ export async function GET(
       },
     }));
 
-    const totalPrice = calculatePriceFromQuoteData(
-      quote.quoteParticipants,
-      formattedQuoteRooms
-    );
+    // Utiliser calculateQuotePrice qui détecte automatiquement la bonne méthode
+    const totalPrice = calculateQuotePrice({
+      quoteParticipants: quote.quoteParticipants,
+      quoteRooms: formattedQuoteRooms,
+    });
 
     const nights = Math.ceil(
       (new Date(quote.checkOut).getTime() - new Date(quote.checkIn).getTime()) /
