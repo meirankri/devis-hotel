@@ -67,17 +67,20 @@ export const signIn = async (values: z.infer<typeof SignInSchema>) => {
     if (existedUser) {
       const res = await generateMagicLink(values.email, existedUser.id);
       console.log("res", res);
-      await db.magicLink.create({
-        data: {
-          userId: existedUser.id,
-          token: res.data.token,
-        },
-      });
-      await sendEmail({
-        to: values.email,
-        subject: "signup link",
-        html: `<div>click to sign up ${res.data.url}</div>`,
-      });
+      const [, responseEmail] = await Promise.all([
+        await db.magicLink.create({
+          data: {
+            userId: existedUser.id,
+            token: res.data.token,
+          },
+        }),
+        await sendEmail({
+          to: values.email,
+          subject: "signup link",
+          html: `<div>click to sign up ${res.data.url}</div>`,
+        }),
+      ]);
+      console.log("responseEmail", responseEmail);
     } else {
       // Créer une organisation pour le nouvel utilisateur
       const organizationSlug = values.email

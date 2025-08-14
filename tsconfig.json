@@ -32,7 +32,8 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "types/global.d.ts",
-    "i18n.ts.old"
+    "i18n.ts.old",
+    "app/[locale]/(withLayout)/(home)/page.tsx.backup"
   ],
   "exclude": ["node_modules"]
 }
