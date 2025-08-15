@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { StayDetail } from "@/components/public/StayDetail";
+import { StayDetailLuxury } from "@/components/public/StayDetailLuxury";
 import { QuoteFormV2 } from "@/components/public/QuoteFormV2";
 import { prisma } from "@/lib/database/db";
 
@@ -42,6 +42,12 @@ export default async function StayPage({ params }: StayPageProps) {
         },
       },
       organization: true,
+      images: {
+        orderBy: [
+          { isMain: 'desc' },
+          { order: 'asc' }
+        ]
+      },
     },
   });
 
@@ -82,11 +88,16 @@ export default async function StayPage({ params }: StayPageProps) {
       createdAt: stay.organization.createdAt.toISOString(),
       updatedAt: stay.organization.updatedAt.toISOString(),
     },
+    images: stay.images.map((image) => ({
+      ...image,
+      createdAt: image.createdAt.toISOString(),
+      updatedAt: image.updatedAt.toISOString(),
+    })),
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50">
-      <StayDetail stay={serializedStay} />
+    <div className="min-h-screen bg-white">
+      <StayDetailLuxury stay={serializedStay} />
       <QuoteFormV2 stay={serializedStay} />
     </div>
   );
