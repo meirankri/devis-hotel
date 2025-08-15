@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Upload, X, Image as ImageIcon, Star, StarOff, GripVertical } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Upload, X, Star } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,6 @@ interface ImageItem {
   isMain: boolean;
   file?: File;
   isUploading?: boolean;
-  markedForDeletion?: boolean;
 }
 
 interface MultiImageUploadProps {
@@ -35,8 +34,6 @@ export function MultiImageUpload({
   maxImages = 10,
 }: MultiImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadingIndices, setUploadingIndices] = useState<Set<number>>(new Set());
-  const [deletedImages, setDeletedImages] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,6 +128,8 @@ export function MultiImageUpload({
     const imageToRemove = value[index];
     
     // Si l'image a un ID (existe en base), on essaie de la supprimer du stockage
+    // Note: On ne supprime du stockage que si l'image existe déjà en base
+    // Les images temporaires seront gérées lors de la sauvegarde
     if (imageToRemove.id && imageToRemove.url) {
       try {
         const response = await fetch(`/api/delete-image?url=${encodeURIComponent(imageToRemove.url)}`, {
@@ -143,9 +142,6 @@ export function MultiImageUpload({
       } catch (error) {
         console.error('Erreur lors de la suppression:', error);
       }
-      
-      // Ajouter à la liste des images supprimées pour tracking
-      setDeletedImages(prev => [...prev, imageToRemove.url]);
     }
     
     const newImages = value.filter((_, i) => i !== index);
@@ -315,23 +311,6 @@ export function MultiImageUpload({
           <p>• Survolez une image pour voir les actions disponibles</p>
         </div>
       )}
-      
-      {/* Cleanup effect pour les images temporaires non sauvegardées */}
-      {useEffect(() => {
-        return () => {
-          // Cleanup des images uploadées mais non sauvegardées lors du démontage
-          const tempImages = value.filter(img => !img.id && img.url);
-          tempImages.forEach(async (img) => {
-            try {
-              await fetch(`/api/delete-image?url=${encodeURIComponent(img.url)}`, {
-                method: 'DELETE',
-              });
-            } catch (error) {
-              console.error('Erreur lors du cleanup:', error);
-            }
-          });
-        };
-      }, [])}
     </div>
   );
 }
