@@ -23,17 +23,17 @@ export const ParticipantSelector: React.FC<ParticipantSelectorProps> = ({
 
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl">
-            <Users className="h-6 w-6 text-white" />
-          </div>
-          <h3 className="text-2xl font-bold text-gray-900">
-            {t("participants")}
-          </h3>
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl">
+          <Users className="h-6 w-6 text-white" />
         </div>
+        <h3 className="text-2xl font-bold text-gray-900">
+          {t("participants")}
+        </h3>
+      </div>
 
-        {totalParticipants > 0 && currentStep === "participants" && (
+      {totalParticipants > 0 && currentStep === "participants" && (
+        <div className="mb-6">
           <Button
             type="button"
             onClick={onContinue}
@@ -42,8 +42,8 @@ export const ParticipantSelector: React.FC<ParticipantSelectorProps> = ({
             {t("continueToRooms")}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="grid gap-4">
         {participants.map((participant) => (

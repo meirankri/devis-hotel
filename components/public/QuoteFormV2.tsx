@@ -60,8 +60,6 @@ const quoteFormSchema = z.object({
 export function QuoteFormV2({ stay }: QuoteFormProps) {
   const t = useTranslations("Public.QuoteForm");
   const locale = useLocale();
-  const dateLocale = locale === "fr" ? fr : enUS;
-  const router = useRouter();
 
   // State
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,8 +70,7 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
     const uniqueAgeRanges = stay.hotel.rooms
       .flatMap((room) => room.roomPricings.map((rp) => rp.ageRange))
       .filter(
-        (ar, index, self) =>
-          index === self.findIndex((a) => a.id === ar.id)
+        (ar, index, self) => index === self.findIndex((a) => a.id === ar.id)
       )
       .sort((a, b) => a.order - b.order);
     return uniqueAgeRanges;
@@ -112,7 +109,8 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
     getRemainingParticipants
   );
 
-  const { calculateRoomInstancePrice, totalPrice } = usePriceCalculation(selectedRooms);
+  const { calculateRoomInstancePrice, totalPrice } =
+    usePriceCalculation(selectedRooms);
 
   // Initialize participants on mount
   useEffect(() => {
@@ -194,7 +192,7 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
       const rooms = selectedRooms.map(({ roomId, instances }) => ({
         roomId,
         quantity: instances.length,
-        occupants: instances.flatMap(instance => 
+        occupants: instances.flatMap((instance) =>
           Object.entries(instance.occupants)
             .filter(([_, count]) => count > 0)
             .map(([ageRangeId, count]) => ({
@@ -206,8 +204,8 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
 
       // Prepare participants data
       const participantsData = participants
-        .filter(p => p.count > 0)
-        .map(p => ({
+        .filter((p) => p.count > 0)
+        .map((p) => ({
           ageRangeId: p.ageRangeId,
           count: p.count,
         }));
@@ -225,14 +223,16 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
 
   // Success screen component
   if (submittedQuoteId) {
-    return <QuoteSuccessScreen 
-      quoteId={submittedQuoteId} 
-      locale={locale}
-      onReset={() => {
-        setSubmittedQuoteId(null);
-        window.location.reload();
-      }}
-    />;
+    return (
+      <QuoteSuccessScreen
+        quoteId={submittedQuoteId}
+        locale={locale}
+        onReset={() => {
+          setSubmittedQuoteId(null);
+          window.location.reload();
+        }}
+      />
+    );
   }
 
   return (
@@ -247,18 +247,14 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           {/* Personal Information */}
-          <PersonalInfoSection 
-            register={register} 
-            errors={errors} 
-            t={t} 
-          />
+          <PersonalInfoSection register={register} errors={errors} t={t} />
 
           {/* Stay Dates */}
-          <StayDatesSection 
-            register={register} 
-            errors={errors} 
+          <StayDatesSection
+            register={register}
+            errors={errors}
             nights={nights}
-            t={t} 
+            t={t}
           />
 
           {/* Participants Selection */}
@@ -291,10 +287,7 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
           )}
 
           {/* Special Requests */}
-          <SpecialRequestsSection 
-            register={register} 
-            t={t} 
-          />
+          <SpecialRequestsSection register={register} t={t} />
 
           {/* Submit Button */}
           <Button
@@ -337,9 +330,7 @@ const PersonalInfoSection: React.FC<{
       <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl">
         <User className="h-6 w-6 text-white" />
       </div>
-      <h3 className="text-2xl font-bold text-gray-900">
-        {t("personalInfo")}
-      </h3>
+      <h3 className="text-2xl font-bold text-gray-900">{t("personalInfo")}</h3>
     </div>
 
     <div className="grid md:grid-cols-2 gap-6">
@@ -371,9 +362,7 @@ const PersonalInfoSection: React.FC<{
           className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl transition-colors"
         />
         {errors.lastName && (
-          <p className="text-sm text-red-600 mt-1">
-            {errors.lastName.message}
-          </p>
+          <p className="text-sm text-red-600 mt-1">{errors.lastName.message}</p>
         )}
       </div>
 
@@ -392,9 +381,7 @@ const PersonalInfoSection: React.FC<{
           />
         </div>
         {errors.email && (
-          <p className="text-sm text-red-600 mt-1">
-            {errors.email.message}
-          </p>
+          <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>
         )}
       </div>
 
@@ -413,9 +400,7 @@ const PersonalInfoSection: React.FC<{
           />
         </div>
         {errors.phone && (
-          <p className="text-sm text-red-600 mt-1">
-            {errors.phone.message}
-          </p>
+          <p className="text-sm text-red-600 mt-1">{errors.phone.message}</p>
         )}
       </div>
     </div>
@@ -433,9 +418,7 @@ const StayDatesSection: React.FC<{
       <div className="p-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl">
         <Calendar className="h-6 w-6 text-white" />
       </div>
-      <h3 className="text-2xl font-bold text-gray-900">
-        {t("stayDates")}
-      </h3>
+      <h3 className="text-2xl font-bold text-gray-900">{t("stayDates")}</h3>
     </div>
 
     <div className="grid md:grid-cols-2 gap-6">
@@ -540,7 +523,9 @@ const QuoteSuccessScreen: React.FC<{
               </Button>
 
               <Button
-                onClick={() => window.open(`/api/quotes/${quoteId}/pdf`, "_blank")}
+                onClick={() =>
+                  window.open(`/api/quotes/${quoteId}/pdf`, "_blank")
+                }
                 className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg group"
               >
                 <Download className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
