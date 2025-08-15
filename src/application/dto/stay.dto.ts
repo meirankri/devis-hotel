@@ -1,5 +1,12 @@
 import { z } from 'zod';
 
+const stayImageSchema = z.object({
+  id: z.string().uuid().optional(),
+  url: z.string().url('URL invalide'),
+  order: z.number().int().min(0).default(0),
+  isMain: z.boolean().default(false),
+});
+
 const baseStaySchema = z.object({
   name: z.string().min(1, 'Le nom est requis').max(255),
   slug: z.string().min(1, 'Le slug est requis').max(255)
@@ -14,6 +21,7 @@ const baseStaySchema = z.object({
   maxDays: z.number().int().positive().optional(),
   isActive: z.boolean().default(true),
   imageUrl: z.union([z.string().url('URL invalide'), z.literal('')]).optional(),
+  images: z.array(stayImageSchema).max(10, 'Maximum 10 images autorisées').optional(),
 });
 
 export const createStaySchema = baseStaySchema.refine(
@@ -65,5 +73,6 @@ export const updateStaySchema = baseStaySchema.partial().refine(
   }
 );
 
+export type StayImageDto = z.infer<typeof stayImageSchema>;
 export type CreateStayDto = z.infer<typeof createStaySchema>;
 export type UpdateStayDto = z.infer<typeof updateStaySchema>;

@@ -13,6 +13,7 @@ import {
   type CreateStayDto,
 } from "@/application/dto/stay.dto";
 import { ImageUpload } from "@/components/ui/image-upload";
+import { MultiImageUpload } from "@/components/ui/multi-image-upload";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { format } from "date-fns";
 import { Calendar, Info } from "lucide-react";
@@ -53,6 +54,7 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
       maxDays: stay?.maxDays || undefined,
       isActive: stay?.isActive ?? true,
       imageUrl: stay?.imageUrl || "",
+      images: stay?.images || [],
     },
   });
 
@@ -99,8 +101,6 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
       await createStay.mutateAsync(data);
     }
   };
-
-  console.log("values", watch());
 
   return (
     <form
@@ -327,23 +327,24 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
 
       <div>
         <Label className="text-sm font-medium text-gray-700">
-          {t("stayImage")}
+          {t("stayImages")}
         </Label>
         <Controller
-          name="imageUrl"
+          name="images"
           control={control}
           render={({ field }) => (
-            <ImageUpload
-              value={field.value || ""}
+            <MultiImageUpload
+              value={field.value || []}
               onChange={field.onChange}
               entityId={stay?.id || "temp"}
               entityType="stay"
               className="mt-1"
+              maxImages={10}
             />
           )}
         />
-        {errors.imageUrl && (
-          <p className="text-sm text-red-600 mt-1">{errors.imageUrl.message}</p>
+        {errors.images && (
+          <p className="text-sm text-red-600 mt-1">{errors.images.message}</p>
         )}
       </div>
 

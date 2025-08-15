@@ -247,6 +247,7 @@
         "update": "Modifier",
         "create": "Créer",
         "cancel": "Annuler",
+        "stayImages": "Images du séjour",
         "createSuccess": "Séjour créé",
         "createSuccessDesc": "Le séjour a été créé avec succès",
         "createError": "Erreur",
@@ -271,7 +272,8 @@
             "title": "Nos séjours disponibles",
             "subtitle": "Choisissez parmi notre sélection de séjours organisés",
             "partialBookingAvailable": "Réservation partielle disponible",
-            "requestQuote": "Demander un devis"
+            "requestQuote": "Demander un devis",
+            "stayImages": "Images du séjour"
         },
         "StayDetail": {
             "partialBooking": "Réservation partielle disponible",

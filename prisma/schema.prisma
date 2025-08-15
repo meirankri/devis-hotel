@@ -216,15 +216,30 @@ model Stay {
   minDays               Int?     // Nombre minimum de jours si partielle
   maxDays               Int?     // Nombre maximum de jours
   isActive              Boolean  @default(true)
-  imageUrl              String?
+  imageUrl              String?  // Conservé pour rétrocompatibilité
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   
   hotel                 Hotel         @relation(fields: [hotelId], references: [id])
   organization          Organization?  @relation(fields: [organizationId], references: [id])
   quotes                Quote[]
+  images                StayImage[]
   
   @@unique([organizationId, slug])
+}
+
+model StayImage {
+  id        String   @id @default(uuid())
+  stayId    String
+  url       String
+  order     Int      @default(0)
+  isMain    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  stay      Stay     @relation(fields: [stayId], references: [id], onDelete: Cascade)
+  
+  @@index([stayId])
 }
 
 model Quote {

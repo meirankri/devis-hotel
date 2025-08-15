@@ -181,6 +181,7 @@
         "startDate": "Start Date",
         "endDate": "End Date",
         "stayDescription": "Description",
+        "stayImages": "Stay images",
         "stayDescriptionPlaceholder": "Describe the stay, proposed activities, etc.",
         "allowPartialBooking": "Allow partial bookings",
         "activeStay": "Active stay (publicly visible)",
