@@ -85,7 +85,13 @@ export function ImageGalleryV2({ images, stayName }: ImageGalleryProps) {
           </div>
         ) : (
           // Multiple images grid
-          <div className={cn("grid", getGridClass(), "h-[400px] md:h-[500px] lg:h-[600px]")}>
+          <div
+            className={cn(
+              "grid",
+              getGridClass(),
+              "h-[400px] md:h-[500px] lg:h-[600px]"
+            )}
+          >
             {displayImages.map((image, index) => (
               <div
                 key={image.id}
@@ -100,14 +106,15 @@ export function ImageGalleryV2({ images, stayName }: ImageGalleryProps) {
                   alt={`${stayName} - Photo ${index + 1}`}
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  sizes={index === 0 && images.length > 3 
-                    ? "(max-width: 768px) 100vw, 66vw" 
-                    : "(max-width: 768px) 50vw, 33vw"
+                  sizes={
+                    index === 0 && images.length > 3
+                      ? "(max-width: 768px) 100vw, 66vw"
+                      : "(max-width: 768px) 50vw, 33vw"
                   }
                   priority={index === 0}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                
+
                 {/* Show remaining count on last image if there are more */}
                 {index === displayImages.length - 1 && remainingCount > 0 && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center group-hover:bg-black/70 transition-colors">
@@ -134,7 +141,10 @@ export function ImageGalleryV2({ images, stayName }: ImageGalleryProps) {
         }))}
         initialIndex={selectedIndex}
         isOpen={lightboxOpen}
-        onClose={() => setLightboxOpen(false)}
+        onClose={() => {
+          console.log("onClose");
+          setLightboxOpen(false);
+        }}
       />
     </>
   );

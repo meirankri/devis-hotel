@@ -82,7 +82,7 @@ export function Carousel({
 
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
-    
+
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
@@ -109,8 +109,10 @@ export function Carousel({
       <div
         className={cn(
           "relative overflow-hidden rounded-xl bg-gray-100 h-full",
-          aspectRatio === "square" || aspectRatio === "video" || aspectRatio === "portrait" 
-            ? aspectRatioClasses[aspectRatio] 
+          aspectRatio === "square" ||
+            aspectRatio === "video" ||
+            aspectRatio === "portrait"
+            ? aspectRatioClasses[aspectRatio]
             : ""
         )}
         onTouchStart={onTouchStart}
@@ -259,55 +261,106 @@ export function CarouselLightbox({
   }, [isOpen, onClose, goToPrevious, goToNext]);
 
   // Touch handling for mobile
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  const [touchEndX, setTouchEndX] = useState<number | null>(null);
+  const [touchEndY, setTouchEndY] = useState<number | null>(null);
 
   const minSwipeDistance = 50;
 
   const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
+    setTouchEndX(null);
+    setTouchEndY(null);
+    setTouchStartX(e.targetTouches[0].clientX);
+    setTouchStartY(e.targetTouches[0].clientY);
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    setTouchEndX(e.targetTouches[0].clientX);
+    setTouchEndY(e.targetTouches[0].clientY);
   };
 
   const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
+    if (!touchStartX || !touchStartY || !touchEndX || !touchEndY) return;
 
-    if (isLeftSwipe) {
-      goToNext();
-    } else if (isRightSwipe) {
-      goToPrevious();
+    const distanceX = touchStartX - touchEndX;
+    const distanceY = touchStartY - touchEndY;
+    
+    // Check for horizontal swipe
+    if (Math.abs(distanceX) > Math.abs(distanceY)) {
+      const isLeftSwipe = distanceX > minSwipeDistance;
+      const isRightSwipe = distanceX < -minSwipeDistance;
+
+      if (isLeftSwipe) {
+        goToNext();
+      } else if (isRightSwipe) {
+        goToPrevious();
+      }
+    } 
+    // Check for vertical swipe down to close
+    else if (distanceY < -minSwipeDistance) {
+      console.log("Swipe down detected - closing");
+      onClose();
     }
   };
 
   if (!isOpen || !images || images.length === 0) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md animate-in fade-in duration-200">
-      {/* Close button */}
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 md:top-6 md:right-6 p-2 md:p-3 rounded-full bg-black/60 text-white hover:bg-black/80 transition-all backdrop-blur-sm border border-white/20 shadow-lg z-10"
-        aria-label="Close lightbox"
-      >
-        <X className="w-5 h-5 md:w-6 md:h-6" />
-      </button>
+    <div className="fixed inset-0 z-50">
+      {/* Clickable background overlay */}
+      <div 
+        className="absolute inset-0 bg-black/95 backdrop-blur-md animate-in fade-in duration-200"
+        onClick={() => {
+          console.log("Background overlay clicked - closing");
+          onClose();
+        }}
+        onTouchEnd={(e) => {
+          // For mobile - check if it's a tap on the background
+          if (e.target === e.currentTarget) {
+            console.log("Background touched - closing");
+            onClose();
+          }
+        }}
+      />
+      
+      {/* Mobile tap zones to close - only on mobile */}
+      <div 
+        className="absolute top-0 left-0 right-0 h-20 md:hidden"
+        onClick={() => {
+          console.log("Top zone tapped - closing");
+          onClose();
+        }}
+      />
+      <div 
+        className="absolute bottom-0 left-0 right-0 h-20 md:hidden"
+        onClick={() => {
+          console.log("Bottom zone tapped - closing");
+          onClose();
+        }}
+      />
+      
+      {/* Content layer - does not handle clicks */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        {/* Close button */}
+        <button
+          onClick={() => {
+            console.log("Close button clicked");
+            onClose();
+          }}
+          className="absolute top-4 right-4 md:top-6 md:right-6 p-2 md:p-3 rounded-full bg-black/60 text-white hover:bg-black/80 transition-all backdrop-blur-sm border border-white/20 shadow-lg z-50 pointer-events-auto"
+          aria-label="Close lightbox"
+        >
+          <X className="w-5 h-5 md:w-6 md:h-6" />
+        </button>
 
-      {/* Main image container */}
-      <div
-        className="absolute inset-0 flex items-center justify-center p-4 md:p-12"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-      >
-        <div className="relative w-full h-full max-w-7xl max-h-[90vh]">
+        {/* Main image container */}
+        <div
+          className="relative w-full h-full max-w-7xl max-h-[90vh] p-4 md:p-12 flex items-center justify-center pointer-events-auto"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
           <Image
             src={images[currentIndex].url}
             alt={images[currentIndex].alt || `Image ${currentIndex + 1}`}
@@ -317,45 +370,54 @@ export function CarouselLightbox({
             priority
           />
         </div>
+
+        {/* Navigation buttons */}
+        {images.length > 1 && (
+          <>
+            <button
+              onClick={() => {
+                console.log("Previous button clicked");
+                goToPrevious();
+              }}
+              className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 p-2 md:p-3 rounded-full bg-black/60 text-white hover:bg-black/80 transition-all backdrop-blur-sm border border-white/20 shadow-lg pointer-events-auto"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
+            </button>
+
+            <button
+              onClick={() => {
+                console.log("Next button clicked");
+                goToNext();
+              }}
+              className="absolute right-4 md:right-6 top-1/2 -translate-y-1/2 p-2 md:p-3 rounded-full bg-black/60 text-white hover:bg-black/80 transition-all backdrop-blur-sm border border-white/20 shadow-lg pointer-events-auto"
+              aria-label="Next image"
+            >
+              <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+            </button>
+
+            {/* Dots indicator */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 max-w-full overflow-x-auto px-4 pointer-events-auto">
+              {images.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    console.log(`Dot ${index} clicked`);
+                    setCurrentIndex(index);
+                  }}
+                  className={cn(
+                    "transition-all duration-300 flex-shrink-0",
+                    currentIndex === index
+                      ? "w-8 h-2 bg-white rounded-full"
+                      : "w-2 h-2 bg-white/60 rounded-full hover:bg-white/80"
+                  )}
+                  aria-label={`Go to image ${index + 1}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
-
-      {/* Navigation buttons */}
-      {images.length > 1 && (
-        <>
-          <button
-            onClick={goToPrevious}
-            className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 p-2 md:p-3 rounded-full bg-black/60 text-white hover:bg-black/80 transition-all backdrop-blur-sm border border-white/20 shadow-lg"
-            aria-label="Previous image"
-          >
-            <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
-          </button>
-
-          <button
-            onClick={goToNext}
-            className="absolute right-4 md:right-6 top-1/2 -translate-y-1/2 p-2 md:p-3 rounded-full bg-black/60 text-white hover:bg-black/80 transition-all backdrop-blur-sm border border-white/20 shadow-lg"
-            aria-label="Next image"
-          >
-            <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
-          </button>
-
-          {/* Dots indicator */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 max-w-full overflow-x-auto px-4">
-            {images.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentIndex(index)}
-                className={cn(
-                  "transition-all duration-300 flex-shrink-0",
-                  currentIndex === index
-                    ? "w-8 h-2 bg-white rounded-full"
-                    : "w-2 h-2 bg-white/60 rounded-full hover:bg-white/80"
-                )}
-                aria-label={`Go to image ${index + 1}`}
-              />
-            ))}
-          </div>
-        </>
-      )}
     </div>
   );
 }
