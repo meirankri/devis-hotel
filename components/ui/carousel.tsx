@@ -27,7 +27,7 @@ export function Carousel({
   autoPlayInterval = 5000,
   showThumbnails = false,
   className,
-  aspectRatio = "video",
+  aspectRatio = "wide",
   onImageClick,
 }: CarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -285,7 +285,7 @@ export function CarouselLightbox({
 
     const distanceX = touchStartX - touchEndX;
     const distanceY = touchStartY - touchEndY;
-    
+
     // Check for horizontal swipe
     if (Math.abs(distanceX) > Math.abs(distanceY)) {
       const isLeftSwipe = distanceX > minSwipeDistance;
@@ -296,7 +296,7 @@ export function CarouselLightbox({
       } else if (isRightSwipe) {
         goToPrevious();
       }
-    } 
+    }
     // Check for vertical swipe down to close
     else if (distanceY < -minSwipeDistance) {
       console.log("Swipe down detected - closing");
@@ -309,7 +309,7 @@ export function CarouselLightbox({
   return (
     <div className="fixed inset-0 z-50">
       {/* Clickable background overlay */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/95 backdrop-blur-md animate-in fade-in duration-200"
         onClick={() => {
           console.log("Background overlay clicked - closing");
@@ -323,23 +323,23 @@ export function CarouselLightbox({
           }
         }}
       />
-      
+
       {/* Mobile tap zones to close - only on mobile */}
-      <div 
+      <div
         className="absolute top-0 left-0 right-0 h-20 md:hidden"
         onClick={() => {
           console.log("Top zone tapped - closing");
           onClose();
         }}
       />
-      <div 
+      <div
         className="absolute bottom-0 left-0 right-0 h-20 md:hidden"
         onClick={() => {
           console.log("Bottom zone tapped - closing");
           onClose();
         }}
       />
-      
+
       {/* Content layer - does not handle clicks */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         {/* Close button */}

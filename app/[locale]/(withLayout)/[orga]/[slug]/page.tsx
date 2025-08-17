@@ -43,10 +43,7 @@ export default async function StayPage({ params }: StayPageProps) {
       },
       organization: true,
       images: {
-        orderBy: [
-          { isMain: 'desc' },
-          { order: 'asc' }
-        ]
+        orderBy: [{ isMain: "desc" }, { order: "asc" }],
       },
     },
   });
@@ -94,6 +91,8 @@ export default async function StayPage({ params }: StayPageProps) {
       updatedAt: image.updatedAt.toISOString(),
     })),
   };
+
+  console.log("serializedStay", serializedStay);
 
   return (
     <div className="min-h-screen bg-white">

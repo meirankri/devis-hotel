@@ -10,6 +10,7 @@ import { ImageGalleryV2 } from "./ImageGalleryV2";
 import { Carousel } from "@/components/ui/carousel";
 import { Hotel, Room, RoomPricing, AgeRange, Stay, StayImage, Organization } from "@prisma/client";
 import { useState } from "react";
+import { cleanTipTapHTML } from "@/lib/utils/html-cleaner";
 
 interface SerializedRoomPricing {
   id: string;
@@ -252,7 +253,7 @@ export function StayDetailLuxury({ stay }: StayDetailProps) {
                 <div className="space-y-6">
                   <div
                     className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: stay.description }}
+                    dangerouslySetInnerHTML={{ __html: cleanTipTapHTML(stay.description) }}
                   />
 
                   <div className="grid gap-4">
@@ -318,7 +319,7 @@ export function StayDetailLuxury({ stay }: StayDetailProps) {
                     {stay.hotel.description && (
                       <div 
                         className="prose prose-sm md:prose-lg max-w-none text-gray-700 leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: stay.hotel.description }}
+                        dangerouslySetInnerHTML={{ __html: cleanTipTapHTML(stay.hotel.description) }}
                       />
                     )}
 
@@ -347,7 +348,7 @@ export function StayDetailLuxury({ stay }: StayDetailProps) {
                               {room.description && (
                                 <div 
                                   className="text-xs md:text-sm text-gray-600 line-clamp-2"
-                                  dangerouslySetInnerHTML={{ __html: room.description }}
+                                  dangerouslySetInnerHTML={{ __html: cleanTipTapHTML(room.description) }}
                                 />
                               )}
                             </div>
