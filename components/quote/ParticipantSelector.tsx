@@ -32,19 +32,6 @@ export const ParticipantSelector: React.FC<ParticipantSelectorProps> = ({
         </h3>
       </div>
 
-      {totalParticipants > 0 && currentStep === "participants" && (
-        <div className="mb-6">
-          <Button
-            type="button"
-            onClick={onContinue}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-          >
-            {t("continueToRooms")}
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
-      )}
-
       <div className="grid gap-4">
         {participants.map((participant) => (
           <div
@@ -96,10 +83,23 @@ export const ParticipantSelector: React.FC<ParticipantSelectorProps> = ({
       </div>
 
       {totalParticipants > 0 && (
-        <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+        <div className="mt-6  p-4 bg-blue-50 rounded-xl border border-blue-200">
           <p className="text-center text-blue-900 font-semibold text-lg">
             {t("total")}: {totalParticipants} {t("persons")}
           </p>
+        </div>
+      )}
+
+      {totalParticipants > 0 && currentStep === "participants" && (
+        <div className="mt-6">
+          <Button
+            type="button"
+            onClick={onContinue}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+          >
+            {t("continueToRooms")}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
         </div>
       )}
     </div>

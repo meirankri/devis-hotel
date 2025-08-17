@@ -72,15 +72,16 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
       .filter(
         (ar, index, self) => index === self.findIndex((a) => a.id === ar.id)
       )
+      .filter((ar) => {
+        return stay.hotel.rooms.some((room) =>
+          room.roomPricings.some(
+            (rp) => rp.ageRange.id === ar.id && rp.price > 0
+          )
+        );
+      })
       .sort((a, b) => a.order - b.order);
     return uniqueAgeRanges;
   }, [stay.hotel.rooms]);
-
-  // Calculate hotel capacity
-  const hotelTotalCapacity = React.useMemo(
-    () => stay.hotel.rooms.reduce((sum, room) => sum + room.capacity, 0),
-    [stay.hotel.rooms]
-  );
 
   // Custom hooks for business logic
   const {
@@ -100,7 +101,6 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
   } = useQuoteForm({
     ageRanges,
     rooms: stay.hotel.rooms,
-    hotelTotalCapacity,
   });
 
   const { getRoomInstanceOccupancy, updateRoomOccupants } = useRoomOccupancy(
@@ -270,7 +270,6 @@ export function QuoteFormV2({ stay }: QuoteFormProps) {
           {totalParticipants > 0 && currentStep === "rooms" && (
             <RoomSelector
               totalParticipants={totalParticipants}
-              hotelTotalCapacity={hotelTotalCapacity}
               availableRooms={availableRooms}
               selectedRooms={selectedRooms}
               participants={participants}

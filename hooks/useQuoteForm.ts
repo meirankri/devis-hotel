@@ -10,13 +10,14 @@ import type {
 interface UseQuoteFormProps {
   ageRanges: AgeRange[];
   rooms: Room[];
-  hotelTotalCapacity: number;
 }
 
-export const useQuoteForm = ({ ageRanges, rooms, hotelTotalCapacity }: UseQuoteFormProps) => {
+export const useQuoteForm = ({ ageRanges, rooms }: UseQuoteFormProps) => {
   const [participants, setParticipants] = useState<ParticipantSelection[]>([]);
   const [selectedRooms, setSelectedRooms] = useState<RoomSelection[]>([]);
-  const [currentStep, setCurrentStep] = useState<"participants" | "rooms">("participants");
+  const [currentStep, setCurrentStep] = useState<"participants" | "rooms">(
+    "participants"
+  );
 
   // Initialize participants
   const initializeParticipants = useCallback(() => {
@@ -38,22 +39,22 @@ export const useQuoteForm = ({ ageRanges, rooms, hotelTotalCapacity }: UseQuoteF
   // Filter available rooms
   const availableRooms = useMemo(() => {
     if (totalParticipants === 0) return [];
-    
-    if (totalParticipants > hotelTotalCapacity) {
-      return rooms;
-    }
-    
+
     return rooms.filter((room) => room.capacity <= totalParticipants);
-  }, [rooms, totalParticipants, hotelTotalCapacity]);
+  }, [rooms, totalParticipants]);
 
   // Calculate remaining participants
   const getRemainingParticipants = useCallback(
     (ageRangeId: string): number => {
-      const totalForAgeRange = participants.find((p) => p.ageRangeId === ageRangeId)?.count || 0;
+      const totalForAgeRange =
+        participants.find((p) => p.ageRangeId === ageRangeId)?.count || 0;
       const assignedForAgeRange = selectedRooms.reduce((sum, room) => {
-        return sum + room.instances.reduce((instSum, inst) => {
-          return instSum + (inst.occupants[ageRangeId] || 0);
-        }, 0);
+        return (
+          sum +
+          room.instances.reduce((instSum, inst) => {
+            return instSum + (inst.occupants[ageRangeId] || 0);
+          }, 0)
+        );
       }, 0);
       return totalForAgeRange - assignedForAgeRange;
     },
@@ -63,28 +64,36 @@ export const useQuoteForm = ({ ageRanges, rooms, hotelTotalCapacity }: UseQuoteF
   // Calculate total assigned participants
   const totalAssignedParticipants = useMemo(() => {
     return selectedRooms.reduce((sum, room) => {
-      return sum + room.instances.reduce((instSum, inst) => {
-        return instSum + Object.values(inst.occupants).reduce((a, b) => a + b, 0);
-      }, 0);
+      return (
+        sum +
+        room.instances.reduce((instSum, inst) => {
+          return (
+            instSum + Object.values(inst.occupants).reduce((a, b) => a + b, 0)
+          );
+        }, 0)
+      );
     }, 0);
   }, [selectedRooms]);
 
   // Update participant count
-  const updateParticipantCount = useCallback((ageRangeId: string, delta: number) => {
-    setParticipants((prev) =>
-      prev.map((p) =>
-        p.ageRangeId === ageRangeId
-          ? { ...p, count: Math.max(0, p.count + delta) }
-          : p
-      )
-    );
-  }, []);
+  const updateParticipantCount = useCallback(
+    (ageRangeId: string, delta: number) => {
+      setParticipants((prev) =>
+        prev.map((p) =>
+          p.ageRangeId === ageRangeId
+            ? { ...p, count: Math.max(0, p.count + delta) }
+            : p
+        )
+      );
+    },
+    []
+  );
 
   // Add room
   const addRoom = useCallback((room: Room) => {
     setSelectedRooms((prev) => {
       const existingRoom = prev.find((r) => r.roomId === room.id);
-      
+
       if (existingRoom) {
         return prev.map((r) =>
           r.roomId === room.id
@@ -101,7 +110,7 @@ export const useQuoteForm = ({ ageRanges, rooms, hotelTotalCapacity }: UseQuoteF
             : r
         );
       }
-      
+
       return [
         ...prev,
         {
@@ -119,21 +128,26 @@ export const useQuoteForm = ({ ageRanges, rooms, hotelTotalCapacity }: UseQuoteF
   }, []);
 
   // Remove room instance
-  const removeRoomInstance = useCallback((roomId: string, instanceId: string) => {
-    setSelectedRooms((prev) => {
-      return prev
-        .map((r) => {
-          if (r.roomId === roomId) {
-            const newInstances = r.instances.filter((i) => i.id !== instanceId);
-            return newInstances.length > 0
-              ? { ...r, instances: newInstances }
-              : null;
-          }
-          return r;
-        })
-        .filter(Boolean) as RoomSelection[];
-    });
-  }, []);
+  const removeRoomInstance = useCallback(
+    (roomId: string, instanceId: string) => {
+      setSelectedRooms((prev) => {
+        return prev
+          .map((r) => {
+            if (r.roomId === roomId) {
+              const newInstances = r.instances.filter(
+                (i) => i.id !== instanceId
+              );
+              return newInstances.length > 0
+                ? { ...r, instances: newInstances }
+                : null;
+            }
+            return r;
+          })
+          .filter(Boolean) as RoomSelection[];
+      });
+    },
+    []
+  );
 
   return {
     participants,

@@ -8,7 +8,6 @@ import type { Room, RoomSelection, ParticipantSelection } from "@/types/quote";
 
 interface RoomSelectorProps {
   totalParticipants: number;
-  hotelTotalCapacity: number;
   availableRooms: Room[];
   selectedRooms: RoomSelection[];
   participants: ParticipantSelection[];
@@ -16,7 +15,12 @@ interface RoomSelectorProps {
   totalPrice: number;
   onAddRoom: (room: Room) => void;
   onRemoveRoomInstance: (roomId: string, instanceId: string) => void;
-  onUpdateOccupants: (roomId: string, instanceId: string, ageRangeId: string, delta: number) => void;
+  onUpdateOccupants: (
+    roomId: string,
+    instanceId: string,
+    ageRangeId: string,
+    delta: number
+  ) => void;
   getRemainingParticipants: (ageRangeId: string) => number;
   getRoomInstanceOccupancy: (instance: any) => number;
   calculateRoomInstancePrice: (room: Room, instance: any) => number;
@@ -25,7 +29,6 @@ interface RoomSelectorProps {
 
 export const RoomSelector: React.FC<RoomSelectorProps> = ({
   totalParticipants,
-  hotelTotalCapacity,
   availableRooms,
   selectedRooms,
   participants,
@@ -53,36 +56,20 @@ export const RoomSelector: React.FC<RoomSelectorProps> = ({
           </h3>
         </div>
 
-        <Button
-          type="button"
-          onClick={onBack}
-          variant="outline"
-        >
+        <Button type="button" onClick={onBack} variant="outline">
           Modifier les participants
         </Button>
       </div>
-
-      {/* Warning if over capacity */}
-      {totalParticipants > hotelTotalCapacity && (
-        <div className="mb-6 p-4 bg-yellow-50 rounded-xl border border-yellow-200">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-yellow-600" />
-            <p className="text-yellow-800 font-medium">
-              {t("capacityWarning")} ({totalParticipants} {t("persons")} / {hotelTotalCapacity} {t("maxCapacity")})
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Available rooms to add */}
       <div className="mb-6">
         <p className="text-gray-700 font-medium mb-3">Ajouter des chambres :</p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {availableRooms.map((room) => (
-            <RoomCard 
-              key={room.id} 
-              room={room} 
-              onClick={() => onAddRoom(room)} 
+            <RoomCard
+              key={room.id}
+              room={room}
+              onClick={() => onAddRoom(room)}
             />
           ))}
         </div>
@@ -91,28 +78,32 @@ export const RoomSelector: React.FC<RoomSelectorProps> = ({
       {/* Selected rooms */}
       {selectedRooms.length > 0 && (
         <div className="space-y-6">
-          <h4 className="font-semibold text-gray-900">Chambres sélectionnées :</h4>
-          
-          {selectedRooms.map(({ roomId, room, instances }) => (
-            <div key={roomId} className="space-y-4">
-              {instances.map((instance, index) => (
-                <RoomInstance
-                  key={instance.id}
-                  room={room}
-                  instance={instance}
-                  index={index}
-                  participants={participants}
-                  occupancy={getRoomInstanceOccupancy(instance)}
-                  price={calculateRoomInstancePrice(room, instance)}
-                  getRemainingParticipants={getRemainingParticipants}
-                  onUpdateOccupants={(ageRangeId, delta) => 
-                    onUpdateOccupants(roomId, instance.id, ageRangeId, delta)
-                  }
-                  onRemove={() => onRemoveRoomInstance(roomId, instance.id)}
-                />
-              ))}
-            </div>
-          ))}
+          <h4 className="font-semibold text-gray-900">
+            Chambres sélectionnées :
+          </h4>
+
+          <div className="flex gap-4">
+            {selectedRooms.map(({ roomId, room, instances }) => (
+              <div key={roomId} className="space-y-4">
+                {instances.map((instance, index) => (
+                  <RoomInstance
+                    key={instance.id}
+                    room={room}
+                    instance={instance}
+                    index={index}
+                    participants={participants}
+                    occupancy={getRoomInstanceOccupancy(instance)}
+                    price={calculateRoomInstancePrice(room, instance)}
+                    getRemainingParticipants={getRemainingParticipants}
+                    onUpdateOccupants={(ageRangeId, delta) =>
+                      onUpdateOccupants(roomId, instance.id, ageRangeId, delta)
+                    }
+                    onRemove={() => onRemoveRoomInstance(roomId, instance.id)}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -126,22 +117,20 @@ export const RoomSelector: React.FC<RoomSelectorProps> = ({
                 {totalAssignedParticipants}/{totalParticipants}
               </p>
             </div>
-            
+
             <div>
               <p className="text-blue-100 text-sm">Chambres</p>
               <p className="text-2xl font-bold">
                 {selectedRooms.reduce((sum, r) => sum + r.instances.length, 0)}
               </p>
             </div>
-            
+
             <div>
               <p className="text-blue-100 text-sm">Prix total</p>
-              <p className="text-3xl font-bold">
-                {totalPrice.toFixed(2)}€
-              </p>
+              <p className="text-3xl font-bold">{totalPrice.toFixed(2)}€</p>
             </div>
           </div>
-          
+
           {totalAssignedParticipants !== totalParticipants && (
             <div className="mt-4 p-3 bg-white/20 rounded-lg">
               <p className="text-sm font-medium">
