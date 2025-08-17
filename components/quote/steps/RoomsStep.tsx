@@ -36,9 +36,17 @@ export const RoomsStep: React.FC<RoomsStepProps> = ({
   };
 
   const canAddMoreRooms = (room: Room): boolean => {
-    const currentQuantity = getRoomQuantity(room.id);
-    const potentialCapacity = totalCapacity - (currentQuantity * room.capacity) + room.capacity;
-    return potentialCapacity <= totalParticipants * 2; // Allow some flexibility
+    // Calculer la capacité actuelle totale sélectionnée
+    const currentTotalCapacity = selectedRooms.reduce((sum, sr) => 
+      sum + (sr.room.capacity * sr.quantity), 0
+    );
+    
+    // Si on ajoute une chambre de plus, quelle serait la nouvelle capacité ?
+    const newPotentialCapacity = currentTotalCapacity + room.capacity;
+    
+    // On peut ajouter une chambre si la nouvelle capacité ne dépasse pas trop le nombre de participants
+    // On permet un peu de flexibilité (jusqu'à 2x le nombre de participants max)
+    return newPotentialCapacity <= Math.max(totalParticipants * 1.5, totalParticipants + 3);
   };
 
 
@@ -91,6 +99,8 @@ export const RoomsStep: React.FC<RoomsStepProps> = ({
               className={`bg-white rounded-2xl shadow-lg border-2 transition-all ${
                 quantity > 0 
                   ? 'border-blue-500 ring-2 ring-blue-100' 
+                  : !canAdd
+                  ? 'border-gray-200 opacity-60'
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
@@ -106,6 +116,11 @@ export const RoomsStep: React.FC<RoomsStepProps> = ({
                   {quantity > 0 && (
                     <div className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
                       {quantity} sélectionnée{quantity > 1 ? 's' : ''}
+                    </div>
+                  )}
+                  {!canAdd && quantity === 0 && (
+                    <div className="absolute top-4 right-4 bg-gray-600 text-white px-3 py-1 rounded-full text-sm">
+                      Capacité atteinte
                     </div>
                   )}
                 </div>
@@ -146,7 +161,10 @@ export const RoomsStep: React.FC<RoomsStepProps> = ({
 
                 {/* Quantity selector */}
                 <div className="flex items-center justify-between pt-4 border-t">
-                  <span className="text-sm text-gray-600">Quantité:</span>
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">Nombre de chambres</span>
+                    <p className="text-xs text-gray-500">Combien de cette chambre voulez-vous réserver ?</p>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Button
                       type="button"
@@ -170,6 +188,7 @@ export const RoomsStep: React.FC<RoomsStepProps> = ({
                       className="h-8 w-8 rounded-full"
                       onClick={() => onUpdateRoomQuantity(room, quantity + 1)}
                       disabled={!canAdd}
+                      title={!canAdd ? "Capacité maximale atteinte" : "Ajouter une chambre"}
                     >
                       <Plus className="h-3 w-3" />
                     </Button>

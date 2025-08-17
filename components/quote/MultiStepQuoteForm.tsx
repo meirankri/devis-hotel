@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
@@ -120,6 +120,7 @@ export function MultiStepQuoteForm({ stay }: MultiStepQuoteFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedQuoteId, setSubmittedQuoteId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const successScreenRef = useRef<HTMLDivElement>(null);
 
   // Extract age ranges
   const ageRanges = React.useMemo(() => {
@@ -192,10 +193,6 @@ export function MultiStepQuoteForm({ stay }: MultiStepQuoteFormProps) {
   // API mutation
   const createQuote = trpc.quotes.createPublic.useMutation({
     onSuccess: (data) => {
-      toast({
-        title: t("successTitle"),
-        description: t("successMessage"),
-      });
       setSubmittedQuoteId(data?.id || null);
     },
     onError: (error) => {
@@ -271,50 +268,28 @@ export function MultiStepQuoteForm({ stay }: MultiStepQuoteFormProps) {
     return false;
   };
 
-  // Animation variants
-  const slideVariants = {
-    enter: (direction: number) => ({
-      x: direction > 0 ? 1000 : -1000,
-      opacity: 0,
-    }),
-    center: {
-      zIndex: 1,
-      x: 0,
-      opacity: 1,
-    },
-    exit: (direction: number) => ({
-      zIndex: 0,
-      x: direction < 0 ? 1000 : -1000,
-      opacity: 0,
-    }),
-  };
-
-  const swipeConfidenceThreshold = 10000;
-  const swipePower = (offset: number, velocity: number) => {
-    return Math.abs(offset) * velocity;
-  };
-
-  const [[page, direction], setPage] = useState([0, 0]);
-
-  // Update page when step changes
+  // Scroll to success screen when quote is submitted
   useEffect(() => {
-    const steps: FormStep[] = ["participants", "rooms", "assignment"];
-    const newPage = steps.indexOf(currentStep);
-    if (newPage !== page) {
-      setPage([newPage, newPage - page]);
+    if (submittedQuoteId && successScreenRef.current) {
+      successScreenRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }
-  }, [currentStep]);
+  }, [submittedQuoteId]);
 
   if (submittedQuoteId) {
     return (
-      <QuoteSuccessScreen
-        quoteId={submittedQuoteId}
-        locale={locale}
-        onReset={() => {
-          setSubmittedQuoteId(null);
-          window.location.reload();
-        }}
-      />
+      <div ref={successScreenRef}>
+        <QuoteSuccessScreen
+          quoteId={submittedQuoteId}
+          locale={locale}
+          onReset={() => {
+            setSubmittedQuoteId(null);
+            window.location.reload();
+          }}
+        />
+      </div>
     );
   }
 
@@ -350,7 +325,8 @@ export function MultiStepQuoteForm({ stay }: MultiStepQuoteFormProps) {
                 Sélectionnez vos chambres
               </h3>
               <p className="text-gray-600">
-                Choisissez le nombre de participants et répartissez-les dans les chambres disponibles
+                Choisissez le nombre de participants et répartissez-les dans les
+                chambres disponibles
               </p>
               <Button
                 type="button"
@@ -360,13 +336,13 @@ export function MultiStepQuoteForm({ stay }: MultiStepQuoteFormProps) {
                 <span>Sélectionner les chambres</span>
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
-              
+
               {/* Show summary if rooms are selected */}
               {selectedRooms.length > 0 && (
                 <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl">
                   <p className="text-green-800 font-medium">
-                    ✓ {selectedRooms.reduce((sum, r) => sum + r.quantity, 0)} chambre(s) sélectionnée(s) - 
-                    {' '}{totalPrice.toFixed(2)}€
+                    ✓ {selectedRooms.reduce((sum, r) => sum + r.quantity, 0)}{" "}
+                    chambre(s) sélectionnée(s) - {totalPrice.toFixed(2)}€
                   </p>
                   <button
                     type="button"
@@ -381,22 +357,24 @@ export function MultiStepQuoteForm({ stay }: MultiStepQuoteFormProps) {
           </div>
 
           {/* Submit Button - Only show when rooms are selected and assigned */}
-          {selectedRooms.length > 0 && totalAssignedParticipants === totalParticipants && totalParticipants > 0 && (
-            <Button
-              type="submit"
-              className="w-full h-14 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-lg font-semibold shadow-xl rounded-2xl"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
-                  {t("submitting")}
-                </div>
-              ) : (
-                <span>{t("submit")}</span>
-              )}
-            </Button>
-          )}
+          {selectedRooms.length > 0 &&
+            totalAssignedParticipants === totalParticipants &&
+            totalParticipants > 0 && (
+              <Button
+                type="submit"
+                className="w-full h-14 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-lg font-semibold shadow-xl rounded-2xl"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                    {t("submitting")}
+                  </div>
+                ) : (
+                  <span>{t("submit")}</span>
+                )}
+              </Button>
+            )}
         </form>
 
         {/* Modal for room selection */}
@@ -416,19 +394,14 @@ export function MultiStepQuoteForm({ stay }: MultiStepQuoteFormProps) {
             />
 
             {/* Multi-step form container with animation */}
-            <div className="mt-6 relative min-h-[400px]">
-              <AnimatePresence initial={false} custom={direction}>
+            <div className="mt-6">
+              <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={currentStep}
-                  custom={direction}
-                  variants={slideVariants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={{
-                    x: { type: "spring", stiffness: 300, damping: 30 },
-                    opacity: { duration: 0.2 },
-                  }}
+                  initial={{ opacity: 0, x: 100 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -100 }}
+                  transition={{ duration: 0.3 }}
                   className="w-full"
                 >
                   {currentStep === "participants" && (

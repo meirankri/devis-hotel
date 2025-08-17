@@ -337,7 +337,6 @@
             "stepRooms": "Chambres",
             "stepAssignment": "Répartition",
             "selectParticipantsDesc": "Sélectionnez le nombre de participants par tranche d'âge",
-            "continueToRooms": "Continuer vers les chambres",
             "selectRoomsDesc": "Sélectionnez les chambres pour vos {count} participants",
             "modifyParticipants": "Modifier les participants",
             "distributeParticipants": "Répartir les participants",
