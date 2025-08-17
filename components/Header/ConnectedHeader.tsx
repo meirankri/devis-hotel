@@ -10,7 +10,7 @@ const ConnectedHeader = () => {
   const user = useSession();
 
   return (
-    <header className="fixed bg-gradient-to-r from-blue-900/90 via-purple-800/80 to-indigo-900/90 top-0 left-0 w-full shadow-md z-50">
+    <header className="fixed bg-gradient-to-r from-blue-900/90 via-purple-800/80 to-indigo-900/90 top-0 left-0 w-full shadow-md z-40">
       <div className="container mx-auto px-4">
         <div className="flex text-white items-center justify-between h-16">
           <Link href="/" className="flex items-center">
