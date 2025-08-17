@@ -2,7 +2,11 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Minus, X, Info } from "lucide-react";
 import { useTranslations } from "next-intl";
-import type { Room, RoomInstance as RoomInstanceType, ParticipantSelection } from "@/types/quote";
+import type {
+  Room,
+  RoomInstance as RoomInstanceType,
+  ParticipantSelection,
+} from "@/types/quote";
 
 interface RoomInstanceProps {
   room: Room;
@@ -33,9 +37,7 @@ export const RoomInstance: React.FC<RoomInstanceProps> = ({
   return (
     <div
       className={`p-6 rounded-xl border-2 ${
-        isOverCapacity
-          ? "bg-red-50 border-red-300"
-          : "bg-white border-gray-200"
+        isOverCapacity ? "bg-red-50 border-red-300" : "bg-white border-gray-200"
       }`}
     >
       <div className="flex justify-between items-start mb-4">
@@ -46,13 +48,13 @@ export const RoomInstance: React.FC<RoomInstanceProps> = ({
           <p className="text-sm text-gray-600">
             Capacité: {occupancy}/{room.capacity} {t("persons")}
           </p>
-          
+
           {/* Room description */}
           {room.description && (
             <div className="mt-2 p-3 bg-gray-50 rounded-lg">
               <div className="flex items-start gap-2">
                 <Info className="h-4 w-4 text-gray-500 mt-0.5" />
-                <div 
+                <div
                   className="text-sm text-gray-600 prose prose-sm max-w-none"
                   dangerouslySetInnerHTML={{ __html: room.description }}
                 />
@@ -60,7 +62,7 @@ export const RoomInstance: React.FC<RoomInstanceProps> = ({
             </div>
           )}
         </div>
-        
+
         <div className="flex items-center gap-3">
           {price > 0 && (
             <div className="text-right">
@@ -70,7 +72,7 @@ export const RoomInstance: React.FC<RoomInstanceProps> = ({
               </p>
             </div>
           )}
-          
+
           <Button
             type="button"
             variant="ghost"
@@ -93,12 +95,15 @@ export const RoomInstance: React.FC<RoomInstanceProps> = ({
 
       <div className="space-y-3">
         {participants.map((participant) => {
-          if (participant.count === 0) return null;
-          
+          const asPricedParticipant = room.roomPricings.find(
+            (rp) => rp.ageRangeId === participant.ageRangeId && rp.price > 0
+          );
+          if (participant.count === 0 || !asPricedParticipant) return null;
+
           const assignedCount = instance.occupants[participant.ageRangeId] || 0;
           const remaining = getRemainingParticipants(participant.ageRangeId);
           const pricing = room.roomPricings.find(
-            rp => rp.ageRangeId === participant.ageRangeId
+            (rp) => rp.ageRangeId === participant.ageRangeId
           );
 
           return (
@@ -162,12 +167,19 @@ export const RoomInstance: React.FC<RoomInstanceProps> = ({
           <div className="space-y-1 text-sm">
             {Object.entries(instance.occupants).map(([ageRangeId, count]) => {
               if (count === 0) return null;
-              const pricing = room.roomPricings.find(rp => rp.ageRangeId === ageRangeId);
+              const pricing = room.roomPricings.find(
+                (rp) => rp.ageRangeId === ageRangeId
+              );
               if (!pricing) return null;
-              
+
               return (
-                <div key={ageRangeId} className="flex justify-between text-gray-600">
-                  <span>{pricing.ageRange.name}: {count} × {pricing.price}€</span>
+                <div
+                  key={ageRangeId}
+                  className="flex justify-between text-gray-600"
+                >
+                  <span>
+                    {pricing.ageRange.name}: {count} × {pricing.price}€
+                  </span>
                   <span>{(count * pricing.price).toFixed(2)}€</span>
                 </div>
               );
