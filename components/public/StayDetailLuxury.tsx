@@ -1,14 +1,31 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Calendar, MapPin, Users, Check, Star, Sparkles, Clock, Coffee } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Check,
+  Star,
+  Sparkles,
+  Clock,
+  Coffee,
+} from "lucide-react";
 import Image from "next/image";
 import { format } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
 import { useLocale } from "next-intl";
 import { ImageGalleryV2 } from "./ImageGalleryV2";
 import { Carousel } from "@/components/ui/carousel";
-import { Hotel, Room, RoomPricing, AgeRange, Stay, StayImage, Organization } from "@prisma/client";
+import {
+  Hotel,
+  Room,
+  RoomPricing,
+  AgeRange,
+  Stay,
+  StayImage,
+  Organization,
+} from "@prisma/client";
 import { useState } from "react";
 import { cleanTipTapHTML } from "@/lib/utils/html-cleaner";
 
@@ -110,7 +127,9 @@ export function StayDetailLuxury({ stay }: StayDetailProps) {
   const getDuration = () => {
     const start = new Date(stay.startDate);
     const end = new Date(stay.endDate);
-    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    const days = Math.ceil(
+      (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+    );
     return days;
   };
 
@@ -119,7 +138,7 @@ export function StayDetailLuxury({ stay }: StayDetailProps) {
       {/* Hero Section avec gradient coloré et carousel */}
       <section className="relative overflow-hidden h-[60vh] md:h-[70vh] lg:h-[80vh]">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-900/90 via-purple-800/80 to-indigo-900/90 z-10 pointer-events-none"></div>
-        
+
         {/* Carousel automatique en arrière-plan */}
         <div className="absolute inset-0 z-0">
           {stay.images && stay.images.length > 0 ? (
@@ -182,7 +201,9 @@ export function StayDetailLuxury({ stay }: StayDetailProps) {
               <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 md:gap-6 text-sm md:text-lg">
                 <div className="flex items-center gap-2 md:gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 md:px-6 py-2 md:py-3">
                   <MapPin className="h-5 w-5 md:h-6 md:w-6 text-blue-300 flex-shrink-0" />
-                  <span className="font-medium truncate">{stay.hotel.name}</span>
+                  <span className="font-medium truncate">
+                    {stay.hotel.name}
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-2 md:gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 md:px-6 py-2 md:py-3">
@@ -253,7 +274,9 @@ export function StayDetailLuxury({ stay }: StayDetailProps) {
                 <div className="space-y-6">
                   <div
                     className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: cleanTipTapHTML(stay.description) }}
+                    dangerouslySetInnerHTML={{
+                      __html: cleanTipTapHTML(stay.description),
+                    }}
                   />
 
                   <div className="grid gap-4">
@@ -298,7 +321,7 @@ export function StayDetailLuxury({ stay }: StayDetailProps) {
               </div>
 
               {/* Informations de l'hôtel */}
-              <div className="grid lg:grid-cols-2 gap-6 md:gap-8">
+              <div className="grid lg:grid-cols-2 gap-6 md:gap-8 lg:items-stretch">
                 <div className="space-y-4 md:space-y-6">
                   {stay.hotel.imageUrl && (
                     <div className="relative h-48 md:h-64 rounded-xl md:rounded-2xl overflow-hidden">
@@ -314,12 +337,16 @@ export function StayDetailLuxury({ stay }: StayDetailProps) {
                   )}
 
                   <div className="space-y-3 md:space-y-4">
-                    <h3 className="text-xl md:text-2xl font-semibold text-gray-900">{stay.hotel.name}</h3>
-                    
+                    <h3 className="text-xl md:text-2xl font-semibold text-gray-900">
+                      {stay.hotel.name}
+                    </h3>
+
                     {stay.hotel.description && (
-                      <div 
+                      <div
                         className="prose prose-sm md:prose-lg max-w-none text-gray-700 leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: cleanTipTapHTML(stay.hotel.description) }}
+                        dangerouslySetInnerHTML={{
+                          __html: cleanTipTapHTML(stay.hotel.description),
+                        }}
                       />
                     )}
 
@@ -335,26 +362,48 @@ export function StayDetailLuxury({ stay }: StayDetailProps) {
                 </div>
 
                 {/* Chambres disponibles */}
-                <div className="space-y-4 md:space-y-6">
-                  <h3 className="text-lg md:text-xl font-semibold text-gray-900">Chambres disponibles</h3>
-                  
+                <div className="space-y-4 md:space-y-6 lg:h-full lg:flex lg:flex-col">
+                  <h3 className="text-lg md:text-xl font-semibold text-gray-900 flex-shrink-0">
+                    Chambres disponibles
+                  </h3>
+
                   {stay.hotel.rooms && stay.hotel.rooms.length > 0 ? (
-                    <div className="grid gap-2 md:gap-3 max-h-[400px] overflow-y-auto pr-2">
+                    <div className="flex flex-col gap-2 md:gap-3 overflow-y-auto lg:flex-1">
                       {stay.hotel.rooms.map((room) => (
-                        <div key={room.id} className="p-3 md:p-4 bg-gradient-to-r from-slate-50 to-gray-50 rounded-lg md:rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="space-y-1 flex-1 min-w-0">
-                              <h4 className="font-medium text-gray-900 text-sm md:text-base truncate">{room.name}</h4>
-                              {room.description && (
-                                <div 
-                                  className="text-xs md:text-sm text-gray-600 line-clamp-2"
-                                  dangerouslySetInnerHTML={{ __html: cleanTipTapHTML(room.description) }}
-                                />
-                              )}
+                        <div
+                          key={room.id}
+                          className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-lg md:rounded-xl border border-gray-200 hover:shadow-md transition-shadow overflow-hidden flex-shrink-0"
+                        >
+                          {room.imageUrl && (
+                            <div className="w-full h-32 md:h-60 relative">
+                              <Image
+                                src={room.imageUrl}
+                                alt={room.name}
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 100vw, 50vw"
+                              />
                             </div>
-                            <div className="flex-shrink-0">
-                              <div className="px-2 md:px-3 py-1 bg-blue-100 text-blue-700 rounded-md md:rounded-lg text-xs md:text-sm font-medium whitespace-nowrap">
-                                {room.capacity} pers.
+                          )}
+                          <div className="p-6">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="space-y-1 flex-1 min-w-0">
+                                <h4 className="font-medium text-gray-900 text-sm md:text-base truncate">
+                                  {room.name}
+                                </h4>
+                                {room.description && (
+                                  <div
+                                    className="text-xs md:text-sm text-gray-600 line-clamp-2"
+                                    dangerouslySetInnerHTML={{
+                                      __html: cleanTipTapHTML(room.description),
+                                    }}
+                                  />
+                                )}
+                              </div>
+                              <div className="flex-shrink-0">
+                                <div className="px-2 md:px-3 py-1 bg-blue-100 text-blue-700 rounded-md md:rounded-lg text-xs md:text-sm font-medium whitespace-nowrap">
+                                  {room.capacity} pers.
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -362,7 +411,9 @@ export function StayDetailLuxury({ stay }: StayDetailProps) {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-gray-500 italic text-sm md:text-base">Aucune chambre disponible</p>
+                    <div className="text-gray-500 italic text-sm md:text-base lg:flex-1 lg:flex lg:items-center">
+                      Aucune chambre disponible
+                    </div>
                   )}
                 </div>
               </div>
