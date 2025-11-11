@@ -5,6 +5,7 @@ import UserMenu from "./UserMenu";
 import { ExtendedUser } from "@/types";
 import MenuLink from "./MenuLink";
 import { useSession } from "@/hooks/useSession";
+import ThemeToggler from "./ThemeToggler";
 
 const ConnectedHeader = () => {
   const user = useSession();
@@ -29,6 +30,7 @@ const ConnectedHeader = () => {
               link: "text-white",
             }}
           />
+          <ThemeToggler />
           <UserMenu />
         </div>
       </div>

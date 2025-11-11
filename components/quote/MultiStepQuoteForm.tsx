@@ -224,17 +224,29 @@ export function MultiStepQuoteForm({ stay }: MultiStepQuoteFormProps) {
           (ra) => ra.roomId === roomId
         );
 
+        // Aplatir tous les occupants
+        const allOccupants = roomAssignmentsForRoom.flatMap((ra) =>
+          Object.entries(ra.participants)
+            .filter(([_, count]) => count > 0)
+            .map(([ageRangeId, count]) => ({
+              ageRangeId,
+              count,
+            }))
+        );
+
+        // Regrouper par ageRangeId pour éviter les doublons
+        const groupedOccupants = allOccupants.reduce<Record<string, number>>((acc, o) => {
+          acc[o.ageRangeId] = (acc[o.ageRangeId] || 0) + o.count;
+          return acc;
+        }, {});
+
         return {
           roomId,
           quantity,
-          occupants: roomAssignmentsForRoom.flatMap((ra) =>
-            Object.entries(ra.participants)
-              .filter(([_, count]) => count > 0)
-              .map(([ageRangeId, count]) => ({
-                ageRangeId,
-                count,
-              }))
-          ),
+          occupants: Object.entries(groupedOccupants).map(([ageRangeId, count]) => ({
+            ageRangeId,
+            count,
+          })),
         };
       });
 

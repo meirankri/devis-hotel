@@ -204,14 +204,21 @@ export const quotesRouter = router({
 
           // Créer les occupants pour cette chambre si fournis
           if (room.occupants && room.occupants.length > 0) {
+            // Regrouper les occupants par ageRangeId pour éviter les doublons
+            const groupedOccupants = room.occupants
+              .filter((o) => o.count > 0)
+              .reduce<Record<string, number>>((acc, o) => {
+                acc[o.ageRangeId] = (acc[o.ageRangeId] || 0) + o.count;
+                return acc;
+              }, {});
+
+            // Créer les occupants avec les counts agrégés
             await prisma.quoteRoomOccupant.createMany({
-              data: room.occupants
-                .filter((o) => o.count > 0)
-                .map((o) => ({
-                  quoteRoomId: quoteRoom.id,
-                  ageRangeId: o.ageRangeId,
-                  count: o.count,
-                })),
+              data: Object.entries(groupedOccupants).map(([ageRangeId, count]) => ({
+                quoteRoomId: quoteRoom.id,
+                ageRangeId,
+                count,
+              })),
             });
           }
         }
