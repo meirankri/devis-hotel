@@ -25,7 +25,10 @@
       "Bash(vercel build:*)",
       "Bash(npm run typecheck:*)",
       "Bash(npm run:*)",
-      "WebFetch(domain:www.ritzparis.com)"
+      "WebFetch(domain:www.ritzparis.com)",
+      "Bash(xargs cat:*)",
+      "Bash(xargs ls:*)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }
