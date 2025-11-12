@@ -3,7 +3,7 @@
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
-import { trpc } from "@/app/_trpc/client";
+import { trpc, type RouterOutputs } from "@/app/_trpc/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,12 +15,15 @@ import {
 import { ImageUpload } from "@/components/ui/image-upload";
 import { MultiImageUpload } from "@/components/ui/multi-image-upload";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { SubPeriodsManager } from "./SubPeriodsManager";
 import { format } from "date-fns";
 import { Calendar, Info } from "lucide-react";
 import { Hotel } from "@/domain/entities/Hotel";
 
+type Stay = RouterOutputs["stays"]["getAll"][number];
+
 interface StayFormProps {
-  stay?: any;
+  stay?: Stay;
   onSuccess: () => void;
   onCancel: () => void;
 }
@@ -215,6 +218,18 @@ export function StayForm({ stay, onSuccess, onCancel }: StayFormProps) {
           )}
         </div>
       </div>
+
+      {/* Sous-périodes - uniquement si le séjour existe */}
+      {stay?.id && (
+        <div className="border-t pt-6">
+          <SubPeriodsManager
+            stayId={stay.id}
+            stayStartDate={new Date(stay.startDate)}
+            stayEndDate={new Date(stay.endDate)}
+            organizationId={stay.organizationId}
+          />
+        </div>
+      )}
 
       <div>
         <Label className="text-sm font-medium text-gray-700">

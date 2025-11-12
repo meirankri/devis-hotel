@@ -190,17 +190,19 @@ model AgeRange {
 }
 
 model RoomPricing {
-  id          String   @id @default(uuid())
+  id          String         @id @default(uuid())
   roomId      String
   ageRangeId  String
-  price       Decimal  // Prix par personne
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  ageRange    AgeRange @relation(fields: [ageRangeId], references: [id], onDelete: Cascade)
-  
-  @@unique([roomId, ageRangeId])
+  subPeriodId String?        // NULL = prix pour tout le séjour
+  price       Decimal        // Prix par personne pour la période
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  room        Room           @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  ageRange    AgeRange       @relation(fields: [ageRangeId], references: [id], onDelete: Cascade)
+  subPeriod   StaySubPeriod? @relation(fields: [subPeriodId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, ageRangeId, subPeriodId])
 }
 
 model Stay {
@@ -219,12 +221,13 @@ model Stay {
   imageUrl              String?  // Conservé pour rétrocompatibilité
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
-  
-  hotel                 Hotel         @relation(fields: [hotelId], references: [id])
+
+  hotel                 Hotel          @relation(fields: [hotelId], references: [id])
   organization          Organization?  @relation(fields: [organizationId], references: [id])
   quotes                Quote[]
   images                StayImage[]
-  
+  subPeriods            StaySubPeriod[]
+
   @@unique([organizationId, slug])
 }
 
@@ -236,28 +239,45 @@ model StayImage {
   isMain    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   stay      Stay     @relation(fields: [stayId], references: [id], onDelete: Cascade)
-  
+
+  @@index([stayId])
+}
+
+model StaySubPeriod {
+  id        String   @id @default(uuid())
+  stayId    String
+  name      String   // Ex: "Semaine 1", "Première quinzaine"
+  startDate DateTime
+  endDate   DateTime
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stay         Stay          @relation(fields: [stayId], references: [id], onDelete: Cascade)
+  roomPricings RoomPricing[]
+
   @@index([stayId])
 }
 
 model Quote {
-  id                String       @id @default(uuid())
-  quoteNumber       String       @unique
-  stayId            String
-  firstName         String
-  lastName          String
-  email             String
-  phone             String
-  checkIn           DateTime
-  checkOut          DateTime
-  specialRequests   String?
-  status            QuoteStatus  @default(PENDING)
-  totalPrice        Decimal?     // Calculé après validation par l'admin
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
-  
+  id                 String       @id @default(uuid())
+  quoteNumber        String       @unique
+  stayId             String
+  firstName          String
+  lastName           String
+  email              String
+  phone              String
+  checkIn            DateTime
+  checkOut           DateTime
+  selectedSubPeriods Json?        // Array des IDs de sous-périodes sélectionnées
+  specialRequests    String?
+  status             QuoteStatus  @default(PENDING)
+  totalPrice         Decimal?     // Calculé après validation par l'admin
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
   stay              Stay         @relation(fields: [stayId], references: [id])
   quoteParticipants QuoteParticipant[]
   quoteRooms        QuoteRoom[]

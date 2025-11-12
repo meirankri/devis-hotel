@@ -28,7 +28,9 @@
       "WebFetch(domain:www.ritzparis.com)",
       "Bash(xargs cat:*)",
       "Bash(xargs ls:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(node -e:*)",
+      "Bash(psql:*)"
     ],
     "deny": []
   }

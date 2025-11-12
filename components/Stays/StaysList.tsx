@@ -100,7 +100,7 @@ export function StaysList() {
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1">
         {stays?.map((stay: Stay) => (
           <div key={stay.id} className="group relative">
             {editingId === stay.id ? (
@@ -148,7 +148,9 @@ export function StaysList() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
                       <Link
-                        href={`/${stay.organization?.slug || 'default'}/${stay.slug}`}
+                        href={`/${stay.organization?.slug || "default"}/${
+                          stay.slug
+                        }`}
                         target="_blank"
                         className="text-white hover:text-gray-200 transition-colors"
                       >
@@ -244,7 +246,7 @@ export function StaysList() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">{t("url")}:</span>
                       <span className="font-mono text-xs text-indigo-600">
-                        /{stay.organization?.slug || 'default'}/{stay.slug}
+                        /{stay.organization?.slug || "default"}/{stay.slug}
                       </span>
                     </div>
                   </div>

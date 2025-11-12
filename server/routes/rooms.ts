@@ -140,22 +140,32 @@ export const roomsRouter = router({
           message: 'Chambre non trouvée',
         });
       }
-      await prisma.roomPricing.upsert({
+      // Rechercher d'abord si un prix existe pour cette combinaison
+      const existing = await prisma.roomPricing.findFirst({
         where: {
-          roomId_ageRangeId: {
-            roomId: input.roomId,
-            ageRangeId: input.ageRangeId,
-          },
-        },
-        update: {
-          price: new Decimal(input.price),
-        },
-        create: {
           roomId: input.roomId,
           ageRangeId: input.ageRangeId,
-          price: new Decimal(input.price),
+          subPeriodId: null,
         },
       });
+
+      if (existing) {
+        await prisma.roomPricing.update({
+          where: { id: existing.id },
+          data: {
+            price: new Decimal(input.price),
+          },
+        });
+      } else {
+        await prisma.roomPricing.create({
+          data: {
+            roomId: input.roomId,
+            ageRangeId: input.ageRangeId,
+            subPeriodId: null,
+            price: new Decimal(input.price),
+          },
+        });
+      }
 
       return { success: true };
     }),

@@ -50,12 +50,11 @@ export class PrismaRoomPricingRepository implements RoomPricingRepository {
   }
 
   async findByRoomAndAgeRange(roomId: string, ageRangeId: string): Promise<RoomPricing | null> {
-    const pricing = await this.prisma.roomPricing.findUnique({
+    const pricing = await this.prisma.roomPricing.findFirst({
       where: {
-        roomId_ageRangeId: {
-          roomId,
-          ageRangeId,
-        },
+        roomId,
+        ageRangeId,
+        subPeriodId: null,
       },
     });
 
@@ -111,22 +110,31 @@ export class PrismaRoomPricingRepository implements RoomPricingRepository {
   async updateMultipleRooms(roomIds: string[], ageRangeId: string, price: number): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       for (const roomId of roomIds) {
-        await tx.roomPricing.upsert({
+        const existing = await tx.roomPricing.findFirst({
           where: {
-            roomId_ageRangeId: {
-              roomId,
-              ageRangeId,
-            },
-          },
-          update: {
-            price: new Decimal(price),
-          },
-          create: {
             roomId,
             ageRangeId,
-            price: new Decimal(price),
+            subPeriodId: null,
           },
         });
+
+        if (existing) {
+          await tx.roomPricing.update({
+            where: { id: existing.id },
+            data: {
+              price: new Decimal(price),
+            },
+          });
+        } else {
+          await tx.roomPricing.create({
+            data: {
+              roomId,
+              ageRangeId,
+              subPeriodId: null,
+              price: new Decimal(price),
+            },
+          });
+        }
       }
     });
   }

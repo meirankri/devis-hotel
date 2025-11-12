@@ -328,6 +328,7 @@ export function RoomsList({ hotelId }: RoomsListProps) {
           onClose={() => setPricingModalOpen(false)}
           roomIds={selectedRoomIds}
           ageRanges={ageRanges || []}
+          hotelId={hotelId}
           onSuccess={() => {
             refetch();
             setSelectedRoomIds([]);
