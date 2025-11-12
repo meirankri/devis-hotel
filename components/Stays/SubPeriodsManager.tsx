@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
@@ -16,6 +16,13 @@ import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
+import {
+  useSubPeriods,
+  useCreateSubPeriod,
+  useUpdateSubPeriod,
+  useDeleteSubPeriod
+} from "@/hooks/queries/useSubPeriods";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface SubPeriod {
   id: string;
@@ -45,8 +52,6 @@ export function SubPeriodsManager({
   stayEndDate,
   organizationId,
 }: SubPeriodsManagerProps) {
-  const [subPeriods, setSubPeriods] = useState<SubPeriod[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPeriod, setEditingPeriod] = useState<SubPeriod | null>(null);
   const [formData, setFormData] = useState<SubPeriodFormData>({
@@ -56,29 +61,19 @@ export function SubPeriodsManager({
   });
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
 
-  // Charger les sous-périodes
-  useEffect(() => {
-    fetchSubPeriods();
-  }, [stayId]);
+  // Utilisation de React Query pour charger les sous-périodes
+  // Plus de useEffect, useState pour loading/error, ou fetchSubPeriods manuel !
+  const {
+    data: subPeriods = [],
+    isLoading: loading,
+    error
+  } = useSubPeriods(stayId);
 
-  const fetchSubPeriods = async () => {
-    try {
-      const response = await fetch(`/api/stays/${stayId}/sub-periods`);
-      if (!response.ok) throw new Error("Erreur lors du chargement");
-
-      const data = await response.json();
-      setSubPeriods(data.data);
-    } catch (error) {
-      console.error("Erreur:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les sous-périodes",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Hooks pour les mutations (create, update, delete)
+  const createMutation = useCreateSubPeriod(stayId);
+  const updateMutation = useUpdateSubPeriod(stayId);
+  const deleteMutation = useDeleteSubPeriod(stayId);
+  const queryClient = useQueryClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,45 +100,29 @@ export function SubPeriodsManager({
       return;
     }
 
-    try {
-      const url = editingPeriod
-        ? `/api/sub-periods/${editingPeriod.id}`
-        : `/api/stays/${stayId}/sub-periods`;
+    // Utilisation de React Query mutations - beaucoup plus simple !
+    const mutationData = {
+      name: formData.name,
+      startDate: new Date(formData.startDate),
+      endDate: new Date(formData.endDate),
+    };
 
-      const method = editingPeriod ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          startDate: new Date(formData.startDate).toISOString(),
-          endDate: new Date(formData.endDate).toISOString(),
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erreur lors de la sauvegarde");
-      }
-
-      toast({
-        title: "Succès",
-        description: editingPeriod
-          ? "Sous-période modifiée avec succès"
-          : "Sous-période créée avec succès",
-      });
-
-      await fetchSubPeriods();
-      handleCloseModal();
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Erreur lors de la sauvegarde",
-        variant: "destructive",
+    if (editingPeriod) {
+      // Update avec React Query
+      updateMutation.mutate(
+        { id: editingPeriod.id, ...mutationData },
+        {
+          onSuccess: () => {
+            handleCloseModal();
+          }
+        }
+      );
+    } else {
+      // Create avec React Query
+      createMutation.mutate(mutationData, {
+        onSuccess: () => {
+          handleCloseModal();
+        }
       });
     }
   };
@@ -153,32 +132,9 @@ export function SubPeriodsManager({
       return;
     }
 
-    try {
-      const response = await fetch(`/api/sub-periods/${periodId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erreur lors de la suppression");
-      }
-
-      toast({
-        title: "Succès",
-        description: "Sous-période supprimée avec succès",
-      });
-
-      await fetchSubPeriods();
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Erreur lors de la suppression",
-        variant: "destructive",
-      });
-    }
+    // Beaucoup plus simple avec React Query !
+    // Les toasts et le refetch sont gérés automatiquement par le hook
+    deleteMutation.mutate(periodId);
   };
 
   const handleEdit = (period: SubPeriod) => {
@@ -205,6 +161,39 @@ export function SubPeriodsManager({
     e.preventDefault();
   };
 
+  // Mutation pour réorganiser les sous-périodes
+  const reorderMutation = useMutation({
+    mutationFn: async (subPeriodIds: string[]) => {
+      const response = await fetch(`/api/stays/${stayId}/sub-periods/reorder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: 'include',
+        body: JSON.stringify({ subPeriodIds }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la réorganisation");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Succès",
+        description: "Ordre mis à jour",
+      });
+    },
+    onError: () => {
+      // Invalider le cache pour recharger depuis le serveur
+      queryClient.invalidateQueries({ queryKey: ['sub-periods', stayId] });
+      toast({
+        title: "Erreur",
+        description: "Impossible de réorganiser",
+        variant: "destructive",
+      });
+    }
+  });
+
   const handleDrop = async (e: React.DragEvent, targetId: string) => {
     e.preventDefault();
 
@@ -213,7 +202,7 @@ export function SubPeriodsManager({
       return;
     }
 
-    // Réorganiser localement
+    // Réorganiser localement pour l'optimistic update
     const draggedIndex = subPeriods.findIndex((p) => p.id === draggedItem);
     const targetIndex = subPeriods.findIndex((p) => p.id === targetId);
 
@@ -223,35 +212,11 @@ export function SubPeriodsManager({
     const [removed] = newPeriods.splice(draggedIndex, 1);
     newPeriods.splice(targetIndex, 0, removed);
 
-    setSubPeriods(newPeriods);
+    // Update optimiste du cache React Query
+    queryClient.setQueryData(['sub-periods', stayId], newPeriods);
 
-    try {
-      // Envoyer le nouvel ordre au serveur
-      const response = await fetch(`/api/stays/${stayId}/sub-periods/reorder`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subPeriodIds: newPeriods.map((p) => p.id),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Erreur lors de la réorganisation");
-      }
-
-      toast({
-        title: "Succès",
-        description: "Ordre mis à jour",
-      });
-    } catch (error) {
-      // Recharger en cas d'erreur
-      await fetchSubPeriods();
-      toast({
-        title: "Erreur",
-        description: "Impossible de réorganiser",
-        variant: "destructive",
-      });
-    }
+    // Envoyer le nouvel ordre au serveur
+    reorderMutation.mutate(newPeriods.map((p) => p.id));
 
     setDraggedItem(null);
   };

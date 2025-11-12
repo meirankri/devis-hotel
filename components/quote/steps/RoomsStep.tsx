@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { RoomPricingModal } from '../RoomPricingModal';
 import type { Room, StaySubPeriod, AgeRange } from '@/types/quote';
 import type { SelectedRoom, SelectedSubPeriod } from '@/types/multi-step-form';
+import { ROOM_CAPACITY_SAFETY_FACTOR } from '@/constants/form.constants';
 
 interface RoomsStepProps {
   rooms: Room[];
@@ -53,8 +54,8 @@ export const RoomsStep: React.FC<RoomsStepProps> = ({
     const newPotentialCapacity = currentTotalCapacity + room.capacity;
     
     // On peut ajouter une chambre si la nouvelle capacité ne dépasse pas trop le nombre de participants
-    // On permet un peu de flexibilité (jusqu'à 2x le nombre de participants max)
-    return newPotentialCapacity <= Math.max(totalParticipants * 1.5, totalParticipants + 3);
+    // On permet de la flexibilité avec le facteur de sécurité défini (par défaut 50% de plus)
+    return newPotentialCapacity <= Math.max(totalParticipants * ROOM_CAPACITY_SAFETY_FACTOR, totalParticipants + 3);
   };
 
 

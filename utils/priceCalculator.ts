@@ -53,15 +53,47 @@ interface QuoteRoomWithOccupants {
 }
 
 /**
- * Calcule le prix pour une tranche d'âge spécifique
- * Gère les sous-périodes si elles sont fournies
+ * Calcule le prix TOTAL pour une personne d'une tranche d'âge donnée à travers toutes les sous-périodes sélectionnées.
+ *
+ * IMPORTANT : Cette fonction ADDITIONNE les prix de chaque sous-période.
+ * Par exemple : Si Semaine 1 = 500€ et Semaine 2 = 600€, le prix total sera 1100€ par personne.
+ *
+ * Stratégie de tarification :
+ * 1. Si aucune sous-période n'est sélectionnée → retourne le prix global du séjour
+ * 2. Pour chaque sous-période sélectionnée :
+ *    - Cherche d'abord un prix spécifique à cette sous-période
+ *    - Si non trouvé, utilise le prix global comme fallback
+ *    - ADDITIONNE tous ces prix pour obtenir le total
+ *
+ * @param room - La chambre contenant les informations de tarification
+ * @param ageRangeId - L'ID de la tranche d'âge (ex: "adult", "child", "infant")
+ * @param selectedSubPeriods - Les sous-périodes sélectionnées (optionnel)
+ * @returns Le prix total par personne en euros (somme de toutes les périodes)
+ *
+ * @example
+ * // Exemple avec 2 sous-périodes
+ * const room = {
+ *   roomPricings: [
+ *     { ageRangeId: "adult", subPeriodId: "week1", price: 500 },
+ *     { ageRangeId: "adult", subPeriodId: "week2", price: 600 },
+ *     { ageRangeId: "adult", subPeriodId: null, price: 1000 } // Prix global (fallback)
+ *   ]
+ * };
+ *
+ * const selectedPeriods = [
+ *   { id: "week1", name: "Semaine 1" },
+ *   { id: "week2", name: "Semaine 2" }
+ * ];
+ *
+ * const price = calculateTotalPricePerPersonAcrossSubPeriods(room, "adult", selectedPeriods);
+ * // Retourne : 1100 (500 + 600)
  */
-function calculatePriceForAgeRange(
+function calculateTotalPricePerPersonAcrossSubPeriods(
   room: Room,
   ageRangeId: string,
   selectedSubPeriods?: SelectedSubPeriod[]
 ): number {
-  // Si pas de sous-périodes sélectionnées, retourner le prix global
+  // Si pas de sous-périodes sélectionnées, retourner le prix global du séjour complet
   if (!selectedSubPeriods || selectedSubPeriods.length === 0) {
     const globalPricing = room.roomPricings.find(
       (rp) => rp.ageRangeId === ageRangeId && !rp.subPeriodId
@@ -69,7 +101,7 @@ function calculatePriceForAgeRange(
     return globalPricing ? Number(globalPricing.price) : 0;
   }
 
-  // Calculer la somme des prix pour les sous-périodes sélectionnées
+  // SOMME des prix pour toutes les sous-périodes sélectionnées
   let totalPrice = 0;
   selectedSubPeriods.forEach((subPeriod) => {
     // Chercher d'abord un prix spécifique pour cette sous-période
@@ -78,20 +110,69 @@ function calculatePriceForAgeRange(
     );
 
     if (subPeriodPricing) {
-      console.log(`Found price for period ${subPeriod.name}, age ${ageRangeId}: ${subPeriodPricing.price}`);
+      // Prix spécifique trouvé pour cette sous-période
       totalPrice += Number(subPeriodPricing.price);
     } else {
-      // Fallback vers le prix global si pas de prix spécifique
+      // Pas de prix spécifique → utiliser le prix global comme fallback
       const globalPricing = room.roomPricings.find(
         (rp) => rp.ageRangeId === ageRangeId && !rp.subPeriodId
       );
-      console.log(`No specific price for period ${subPeriod.name}, using global: ${globalPricing?.price}`);
       totalPrice += globalPricing ? Number(globalPricing.price) : 0;
     }
   });
 
-  console.log(`Total price for age ${ageRangeId}: ${totalPrice}`);
   return totalPrice;
+}
+
+// Pour compatibilité avec l'ancien nom (deprecated - à supprimer dans une future version)
+const calculatePriceForAgeRange = calculateTotalPricePerPersonAcrossSubPeriods;
+
+// Export de la nouvelle fonction pour usage externe
+export { calculateTotalPricePerPersonAcrossSubPeriods };
+
+/**
+ * Récupère le prix d'une chambre pour une tranche d'âge spécifique et optionnellement une sous-période.
+ * Avec fallback vers le prix global si pas de prix spécifique à la sous-période.
+ *
+ * @param room - La chambre avec les informations de prix
+ * @param ageRangeId - L'ID de la tranche d'âge
+ * @param subPeriodId - L'ID de la sous-période (optionnel)
+ * @returns Le prix en euros, ou 0 si aucun prix trouvé
+ *
+ * @example
+ * // Prix global (sans sous-période)
+ * const globalPrice = getRoomPriceForAgeRange(room, "adult");
+ *
+ * // Prix pour une sous-période spécifique avec fallback
+ * const periodPrice = getRoomPriceForAgeRange(room, "adult", "week1");
+ * // Si pas de prix week1, retourne le prix global
+ */
+export function getRoomPriceForAgeRange(
+  room: { roomPricings?: RoomPricing[] },
+  ageRangeId: string,
+  subPeriodId?: string | null
+): number {
+  if (!room.roomPricings) return 0;
+
+  // Chercher d'abord le prix exact (avec ou sans sous-période)
+  const exactPricing = room.roomPricings.find(
+    (rp) => rp.ageRangeId === ageRangeId && rp.subPeriodId === subPeriodId
+  );
+
+  if (exactPricing) {
+    return Number(exactPricing.price);
+  }
+
+  // Si une sous-période était demandée mais pas de prix trouvé,
+  // faire un fallback vers le prix global
+  if (subPeriodId) {
+    const globalPricing = room.roomPricings.find(
+      (rp) => rp.ageRangeId === ageRangeId && !rp.subPeriodId
+    );
+    return globalPricing ? Number(globalPricing.price) : 0;
+  }
+
+  return 0;
 }
 
 /**
@@ -108,7 +189,7 @@ export function calculatePriceFromRoomSelections(
     instances.forEach((instance) => {
       Object.entries(instance.occupants).forEach(([ageRangeId, count]) => {
         if (count > 0) {
-          const pricePerPerson = calculatePriceForAgeRange(
+          const pricePerPerson = calculateTotalPricePerPersonAcrossSubPeriods(
             room,
             ageRangeId,
             selectedSubPeriods
@@ -151,18 +232,10 @@ export function calculatePriceFromQuoteData(
           roomPrices.reduce((sum, price) => sum + price, 0) / roomPrices.length;
         // Prix par séjour complet, pas par nuit
         total += avgPrice * participant.count;
-        console.log(
-          `Participant ${
-            participant.ageRangeId
-          }: avgPrice ${avgPrice} * count ${participant.count} = ${
-            avgPrice * participant.count
-          }`
-        );
       }
     }
   });
 
-  console.log("Total calculated from quote data:", total);
   return total;
 }
 
@@ -185,14 +258,6 @@ export function calculatePriceFromRoomOccupants(
             occupant.ageRangeId,
             selectedSubPeriods
           );
-          console.log(
-            "Adding to total:",
-            pricePerPerson,
-            "*",
-            occupant.count,
-            "=",
-            pricePerPerson * occupant.count
-          );
           total += pricePerPerson * occupant.count;
         }
       });
@@ -206,12 +271,8 @@ export function calculatePriceFromRoomOccupants(
  * Fonction universelle qui détecte le type de données et calcule le prix approprié
  */
 export function calculateQuotePrice(data: any, selectedSubPeriods?: SelectedSubPeriod[]): number {
-  console.log("calculateQuotePrice called with data structure check");
-  console.log("Selected sub-periods passed:", selectedSubPeriods?.length);
-
   // Si c'est des selections de chambres (QuoteFormV2)
   if (Array.isArray(data) && data[0]?.instances) {
-    console.log("Using calculatePriceFromRoomSelections");
     return calculatePriceFromRoomSelections(data, selectedSubPeriods);
   }
 
@@ -223,16 +284,12 @@ export function calculateQuotePrice(data: any, selectedSubPeriods?: SelectedSubP
     );
 
     if (hasRoomOccupants) {
-      console.log("Using calculatePriceFromRoomOccupants with sub-periods");
       return calculatePriceFromRoomOccupants(data.quoteRooms, selectedSubPeriods);
     }
   }
 
   // Si c'est un objet quote avec participants et rooms (structure classique)
   if (data.quoteParticipants && data.quoteRooms) {
-    console.log("Using calculatePriceFromQuoteData");
-    console.log("Participants:", data.quoteParticipants.length);
-    console.log("Rooms:", data.quoteRooms.length);
     return calculatePriceFromQuoteData(data.quoteParticipants, data.quoteRooms);
   }
 

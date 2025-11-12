@@ -7,7 +7,7 @@ import { Calendar, Users, Mail, Phone, Home, Download, Euro, ChevronRight, Info 
 import { format } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
 import { useLocale } from "next-intl";
-import { calculateQuotePrice } from "@/utils/priceCalculator";
+import { calculateQuotePrice, getRoomPriceForAgeRange } from "@/utils/priceCalculator";
 
 interface QuoteDetailViewProps {
   quote: any; // TODO: Add proper type
@@ -40,24 +40,9 @@ export function QuoteDetailView({ quote }: QuoteDetailViewProps) {
   };
 
   const selectedSubPeriods = getSelectedSubPeriods();
-  console.log("Selected sub-periods:", selectedSubPeriods);
 
-  // Calculer le prix pour une chambre et un type d'âge
-  const getRoomPriceForAgeRange = (room: any, ageRangeId: string, subPeriodId?: string | null) => {
-    const pricing = room.roomPricings?.find(
-      (rp: any) => rp.ageRangeId === ageRangeId && rp.subPeriodId === subPeriodId
-    );
-
-    // Si pas de prix pour cette sous-période, chercher le prix global
-    if (!pricing && subPeriodId) {
-      const globalPricing = room.roomPricings?.find(
-        (rp: any) => rp.ageRangeId === ageRangeId && !rp.subPeriodId
-      );
-      return globalPricing?.price ? Number(globalPricing.price) : 0;
-    }
-
-    return pricing?.price ? Number(pricing.price) : 0;
-  };
+  // Utilisation de la fonction centralisée depuis priceCalculator
+  // Plus de duplication de code !
 
   // Créer une ventilation détaillée des prix
   const getPriceBreakdown = () => {

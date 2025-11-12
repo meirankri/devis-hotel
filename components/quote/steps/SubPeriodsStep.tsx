@@ -24,16 +24,34 @@ export function SubPeriodsStep({
   canContinue,
   onContinue
 }: SubPeriodsStepProps) {
-  // Si pas de sous-périodes ou réservation partielle non autorisée, sélectionner tout automatiquement
+  /**
+   * ✅ PATTERN UX INTENTIONNEL - NE PAS SUPPRIMER
+   *
+   * Ce useEffect améliore l'expérience utilisateur en évitant des étapes inutiles :
+   *
+   * 1. Si AUCUNE sous-période n'existe → Skip automatiquement cette étape
+   *    (L'utilisateur ne peut rien sélectionner, donc on passe directement aux participants)
+   *
+   * 2. Si la réservation partielle est INTERDITE → Auto-sélectionne tout et avance
+   *    (L'utilisateur DOIT tout prendre, donc pas de choix à faire)
+   *
+   * Le délai de 100ms permet à React de mettre à jour l'état avant la navigation,
+   * évitant les race conditions avec le batching des états React.
+   */
   useEffect(() => {
     if (!subPeriods || subPeriods.length === 0) {
-      // Pas de sous-périodes, passer à l'étape suivante
+      // Cas 1 : Aucune sous-période configurée pour ce séjour
+      // → On passe directement à l'étape des participants
       onContinue();
     } else if (!allowPartialBooking && selectedSubPeriods.length === 0) {
-      // Sélectionner automatiquement toutes les sous-périodes
+      // Cas 2 : Réservation complète obligatoire et rien n'est encore sélectionné
+      // → On sélectionne automatiquement toutes les périodes
       subPeriods.forEach(sp => onUpdateSelection(sp.id, true));
-      // Passer automatiquement à l'étape suivante
-      setTimeout(onContinue, 100);
+
+      // Petit délai pour laisser React mettre à jour l'état avant la navigation
+      // Cela évite les problèmes de synchronisation avec le batching des états
+      const NAVIGATION_DELAY_MS = 100;
+      setTimeout(onContinue, NAVIGATION_DELAY_MS);
     }
   }, [subPeriods, allowPartialBooking, selectedSubPeriods.length]);
 
