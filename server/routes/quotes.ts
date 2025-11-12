@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { protectedProcedure, publicProcedure, router } from "@/server/trpc";
 import { createQuoteRequestSchema } from "@/application/dto/quote.dto";
 import { prisma } from "@/lib/database/db";
+import { Prisma } from "@prisma/client";
 
 export const quotesRouter = router({
   getAll: protectedProcedure.query(async () => {
@@ -59,11 +60,15 @@ export const quotesRouter = router({
                       roomPricings: {
                         include: {
                           ageRange: true,
+                          subPeriod: true,
                         },
                       },
                     },
                   },
                 },
+              },
+              subPeriods: {
+                orderBy: { order: 'asc' },
               },
             },
           },
@@ -167,6 +172,7 @@ export const quotesRouter = router({
           checkIn,
           checkOut,
           specialRequests: input.specialRequests,
+          selectedSubPeriods: input.selectedSubPeriods ? input.selectedSubPeriods : Prisma.JsonNull,
           status: "PENDING",
           quoteParticipants: {
             create: input.participants

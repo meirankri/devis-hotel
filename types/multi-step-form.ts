@@ -1,7 +1,15 @@
 // Types for Multi-Step Quote Form
 import type { Room, AgeRange, RoomPricing } from './quote';
 
-export type FormStep = 'participants' | 'rooms' | 'assignment';
+export type FormStep = 'subPeriods' | 'participants' | 'rooms' | 'assignment';
+
+export interface SelectedSubPeriod {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  order: number;
+}
 
 export interface ParticipantData {
   ageRangeId: string;
@@ -24,15 +32,18 @@ export interface RoomAssignment {
 }
 
 export interface MultiStepFormData {
-  // Step 1: Participants
+  // Step 1: SubPeriods
+  selectedSubPeriods: SelectedSubPeriod[];
+
+  // Step 2: Participants
   participants: ParticipantData[];
   totalParticipants: number;
-  
-  // Step 2: Room Selection
+
+  // Step 3: Room Selection
   selectedRooms: SelectedRoom[];
   totalCapacity: number;
-  
-  // Step 3: Room Assignments
+
+  // Step 4: Room Assignments
   roomAssignments: RoomAssignment[];
 }
 

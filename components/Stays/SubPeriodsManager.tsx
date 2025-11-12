@@ -348,78 +348,74 @@ export function SubPeriodsManager({
           editingPeriod ? "Modifier la sous-période" : "Nouvelle sous-période"
         }
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Label htmlFor="name">Nom de la période</Label>
+          <Input
+            id="name"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="Ex: Semaine 1, Première quinzaine..."
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="name">Nom de la période</Label>
+            <Label htmlFor="startDate">Date de début</Label>
             <Input
-              id="name"
-              value={formData.name}
+              id="startDate"
+              type="date"
+              value={formData.startDate}
               onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
+                setFormData({ ...formData, startDate: e.target.value })
               }
-              placeholder="Ex: Semaine 1, Première quinzaine..."
+              min={format(stayStartDate, "yyyy-MM-dd")}
+              max={format(stayEndDate, "yyyy-MM-dd")}
               required
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="startDate">Date de début</Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={formData.startDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, startDate: e.target.value })
-                }
-                min={format(stayStartDate, "yyyy-MM-dd")}
-                max={format(stayEndDate, "yyyy-MM-dd")}
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="endDate">Date de fin</Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={formData.endDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, endDate: e.target.value })
-                }
-                min={format(stayStartDate, "yyyy-MM-dd")}
-                max={format(stayEndDate, "yyyy-MM-dd")}
-                required
-              />
-            </div>
+          <div>
+            <Label htmlFor="endDate">Date de fin</Label>
+            <Input
+              id="endDate"
+              type="date"
+              value={formData.endDate}
+              onChange={(e) =>
+                setFormData({ ...formData, endDate: e.target.value })
+              }
+              min={format(stayStartDate, "yyyy-MM-dd")}
+              max={format(stayEndDate, "yyyy-MM-dd")}
+              required
+            />
           </div>
+        </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5" />
-              <div className="text-sm text-blue-900">
-                <p className="font-medium mb-1">Information</p>
-                <p>
-                  Les dates doivent être comprises entre le{" "}
-                  {format(stayStartDate, "dd/MM/yyyy")} et le{" "}
-                  {format(stayEndDate, "dd/MM/yyyy")}.
-                </p>
-                <p className="mt-1">
-                  Les sous-périodes ne peuvent pas se chevaucher.
-                </p>
-              </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5" />
+            <div className="text-sm text-blue-900">
+              <p className="font-medium mb-1">Information</p>
+              <p>
+                Les dates doivent être comprises entre le{" "}
+                {format(stayStartDate, "dd/MM/yyyy")} et le{" "}
+                {format(stayEndDate, "dd/MM/yyyy")}.
+              </p>
+              <p className="mt-1">
+                Les sous-périodes ne peuvent pas se chevaucher.
+              </p>
             </div>
           </div>
+        </div>
 
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={handleCloseModal}>
-              Annuler
-            </Button>
-            <Button type="submit">
-              {editingPeriod ? "Modifier" : "Créer"}
-            </Button>
-          </div>
-        </form>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={handleCloseModal}>
+            Annuler
+          </Button>
+          <Button onClick={handleSubmit}>
+            {editingPeriod ? "Modifier" : "Créer"}
+          </Button>
+        </div>
       </Modal>
     </div>
   );

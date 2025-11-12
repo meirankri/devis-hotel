@@ -10,12 +10,25 @@ export interface AgeRange {
   updatedAt?: string;
 }
 
+export interface StaySubPeriod {
+  id: string;
+  stayId: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  order: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface RoomPricing {
   id: string;
   roomId: string;
   ageRangeId: string;
+  subPeriodId?: string | null;
   price: number;
   ageRange: AgeRange;
+  subPeriod?: StaySubPeriod | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -67,6 +80,7 @@ export interface Stay {
   imageUrl: string | null;
   hotel: Hotel;
   organization: Organization;
+  subPeriods?: StaySubPeriod[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -104,6 +118,7 @@ export interface QuoteFormData {
 
 export interface QuoteSubmissionData extends QuoteFormData {
   stayId: string;
+  selectedSubPeriods?: string[];
   rooms: Array<{
     roomId: string;
     quantity: number;

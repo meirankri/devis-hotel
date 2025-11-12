@@ -1,10 +1,10 @@
-import { getTranslations } from 'next-intl/server';
-import { QuoteDetail } from '@/components/Quotes/QuoteDetail';
-import { ArrowLeft, FileText } from 'lucide-react';
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { db } from '@/lib/database/db';
-import { Container } from '@/components/ui/container';
+import { getTranslations } from "next-intl/server";
+import { QuoteDetail } from "@/components/Quotes/QuoteDetail";
+import { ArrowLeft, FileText } from "lucide-react";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/database/db";
+import { Container } from "@/components/ui/container";
 
 interface QuoteDetailPageProps {
   params: Promise<{
@@ -13,10 +13,12 @@ interface QuoteDetailPageProps {
   }>;
 }
 
-export default async function QuoteDetailPage({ params }: QuoteDetailPageProps) {
+export default async function QuoteDetailPage({
+  params,
+}: QuoteDetailPageProps) {
   const { id } = await params;
-  const t = await getTranslations('Quotes');
-  
+  const t = await getTranslations("Quotes");
+
   const quote = await db.quote.findUnique({
     where: { id },
     include: {
@@ -29,17 +31,41 @@ export default async function QuoteDetailPage({ params }: QuoteDetailPageProps) 
                   roomPricings: {
                     include: {
                       ageRange: true,
+                      subPeriod: true,
                     },
                   },
                 },
               },
             },
           },
+          organization: true,
+          subPeriods: {
+            orderBy: { order: "asc" },
+          },
         },
       },
       quoteParticipants: {
         include: {
           ageRange: true,
+        },
+      },
+      quoteRooms: {
+        include: {
+          room: {
+            include: {
+              roomPricings: {
+                include: {
+                  ageRange: true,
+                  subPeriod: true,
+                },
+              },
+            },
+          },
+          quoteRoomOccupants: {
+            include: {
+              ageRange: true,
+            },
+          },
         },
       },
     },
@@ -54,29 +80,29 @@ export default async function QuoteDetailPage({ params }: QuoteDetailPageProps) 
       <Container className="max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <Link 
-            href="/quotes" 
+          <Link
+            href="/quotes"
             className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors mb-4"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>{t('backToQuotes')}</span>
+            <span>{t("backToQuotes")}</span>
           </Link>
-          
+
           <div className="flex items-center gap-3">
             <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg">
               <FileText className="h-8 w-8 text-white" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                {t('quoteDetails')}
+                {t("quoteDetails")}
               </h1>
               <p className="text-gray-600 mt-1">
-                {t('quoteNumber')}: {quote.quoteNumber}
+                {t("quoteNumber")}: {quote.quoteNumber}
               </p>
             </div>
           </div>
         </div>
-        
+
         <QuoteDetail quote={quote} />
       </Container>
     </div>

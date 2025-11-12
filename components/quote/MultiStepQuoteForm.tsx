@@ -16,6 +16,7 @@ import { Modal } from "@/components/ui/modal";
 import { ArrowRight } from "lucide-react";
 
 // Components
+import { SubPeriodsStep } from "./steps/SubPeriodsStep";
 import { ParticipantsStep } from "./steps/ParticipantsStep";
 import { RoomsStep } from "./steps/RoomsStep";
 import { AssignmentStep } from "./steps/AssignmentStep";
@@ -54,9 +55,10 @@ const StepIndicator: React.FC<{
   onStepClick: (step: FormStep) => void;
 }> = ({ currentStep, canGoToStep, onStepClick }) => {
   const steps: { id: FormStep; label: string; number: number }[] = [
-    { id: "participants", label: "Participants", number: 1 },
-    { id: "rooms", label: "Chambres", number: 2 },
-    { id: "assignment", label: "Répartition", number: 3 },
+    { id: "subPeriods", label: "Périodes", number: 1 },
+    { id: "participants", label: "Participants", number: 2 },
+    { id: "rooms", label: "Chambres", number: 3 },
+    { id: "assignment", label: "Répartition", number: 4 },
   ];
 
   const currentStepIndex = steps.findIndex((s) => s.id === currentStep);
@@ -122,6 +124,12 @@ export function MultiStepQuoteForm({ stay }: MultiStepQuoteFormProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const successScreenRef = useRef<HTMLDivElement>(null);
 
+  // Extract sub-periods
+  const subPeriods = React.useMemo(() => {
+    return stay.subPeriods?.sort((a, b) => a.order - b.order) || [];
+  }, [stay.subPeriods]);
+  console.log("subPeriods", subPeriods);
+
   // Extract age ranges
   const ageRanges = React.useMemo(() => {
     const uniqueAgeRanges = stay.hotel.rooms
@@ -168,6 +176,7 @@ export function MultiStepQuoteForm({ stay }: MultiStepQuoteFormProps) {
     participants,
     selectedRooms,
     roomAssignments,
+    selectedSubPeriods,
     totalParticipants,
     totalCapacity,
     totalAssignedParticipants,
@@ -176,6 +185,7 @@ export function MultiStepQuoteForm({ stay }: MultiStepQuoteFormProps) {
     updateParticipantCount,
     updateRoomQuantity,
     updateRoomAssignment,
+    updateSubPeriodSelection,
     getRemainingParticipants,
     validateStep,
     canGoNext,
@@ -186,9 +196,12 @@ export function MultiStepQuoteForm({ stay }: MultiStepQuoteFormProps) {
   } = useMultiStepQuoteForm({
     ageRanges,
     rooms: stay.hotel.rooms,
+    subPeriods,
     checkIn,
     checkOut,
   });
+
+  console.log("selectedSubPeriods", selectedSubPeriods, currentStep);
 
   // API mutation
   const createQuote = trpc.quotes.createPublic.useMutation({
@@ -235,18 +248,23 @@ export function MultiStepQuoteForm({ stay }: MultiStepQuoteFormProps) {
         );
 
         // Regrouper par ageRangeId pour éviter les doublons
-        const groupedOccupants = allOccupants.reduce<Record<string, number>>((acc, o) => {
-          acc[o.ageRangeId] = (acc[o.ageRangeId] || 0) + o.count;
-          return acc;
-        }, {});
+        const groupedOccupants = allOccupants.reduce<Record<string, number>>(
+          (acc, o) => {
+            acc[o.ageRangeId] = (acc[o.ageRangeId] || 0) + o.count;
+            return acc;
+          },
+          {}
+        );
 
         return {
           roomId,
           quantity,
-          occupants: Object.entries(groupedOccupants).map(([ageRangeId, count]) => ({
-            ageRangeId,
-            count,
-          })),
+          occupants: Object.entries(groupedOccupants).map(
+            ([ageRangeId, count]) => ({
+              ageRangeId,
+              count,
+            })
+          ),
         };
       });
 
@@ -261,6 +279,7 @@ export function MultiStepQuoteForm({ stay }: MultiStepQuoteFormProps) {
       await createQuote.mutateAsync({
         ...data,
         stayId: stay.id,
+        selectedSubPeriods: selectedSubPeriods.map((sp) => sp.id),
         rooms,
         participants: participantsData,
       });
@@ -271,11 +290,18 @@ export function MultiStepQuoteForm({ stay }: MultiStepQuoteFormProps) {
 
   // Check if can navigate to a step
   const canGoToStep = (step: FormStep): boolean => {
-    if (step === "participants") return true;
-    if (step === "rooms") return validateStep("participants").isValid;
+    if (step === "subPeriods") return true;
+    if (step === "participants") return validateStep("subPeriods").isValid;
+    if (step === "rooms")
+      return (
+        validateStep("subPeriods").isValid &&
+        validateStep("participants").isValid
+      );
     if (step === "assignment")
       return (
-        validateStep("participants").isValid && validateStep("rooms").isValid
+        validateStep("subPeriods").isValid &&
+        validateStep("participants").isValid &&
+        validateStep("rooms").isValid
       );
     return false;
   };
@@ -416,6 +442,17 @@ export function MultiStepQuoteForm({ stay }: MultiStepQuoteFormProps) {
                   transition={{ duration: 0.3 }}
                   className="w-full"
                 >
+                  {currentStep === "subPeriods" && (
+                    <SubPeriodsStep
+                      subPeriods={subPeriods}
+                      selectedSubPeriods={selectedSubPeriods}
+                      allowPartialBooking={stay.allowPartialBooking}
+                      onUpdateSelection={updateSubPeriodSelection}
+                      canContinue={canGoNext}
+                      onContinue={goNext}
+                    />
+                  )}
+
                   {currentStep === "participants" && (
                     <ParticipantsStep
                       participants={participants}
@@ -436,6 +473,9 @@ export function MultiStepQuoteForm({ stay }: MultiStepQuoteFormProps) {
                       canContinue={canGoNext}
                       onContinue={goNext}
                       onBack={goPrevious}
+                      selectedSubPeriods={selectedSubPeriods}
+                      allSubPeriods={subPeriods}
+                      ageRanges={ageRanges}
                     />
                   )}
 

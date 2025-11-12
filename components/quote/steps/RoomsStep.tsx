@@ -1,12 +1,13 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Home, Plus, Minus, Users, Euro, AlertCircle, ChevronLeft } from 'lucide-react';
+import { Home, Plus, Minus, Users, Euro, AlertCircle, ChevronLeft, Info } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
-import type { Room } from '@/types/quote';
-import type { SelectedRoom } from '@/types/multi-step-form';
+import { RoomPricingModal } from '../RoomPricingModal';
+import type { Room, StaySubPeriod, AgeRange } from '@/types/quote';
+import type { SelectedRoom, SelectedSubPeriod } from '@/types/multi-step-form';
 
 interface RoomsStepProps {
   rooms: Room[];
@@ -17,6 +18,9 @@ interface RoomsStepProps {
   canContinue: boolean;
   onContinue: () => void;
   onBack: () => void;
+  selectedSubPeriods?: SelectedSubPeriod[];
+  allSubPeriods?: StaySubPeriod[];
+  ageRanges?: AgeRange[];
 }
 
 export const RoomsStep: React.FC<RoomsStepProps> = ({
@@ -27,9 +31,13 @@ export const RoomsStep: React.FC<RoomsStepProps> = ({
   onUpdateRoomQuantity,
   canContinue,
   onContinue,
-  onBack
+  onBack,
+  selectedSubPeriods = [],
+  allSubPeriods = [],
+  ageRanges = []
 }) => {
   const t = useTranslations('Public.QuoteForm');
+  const [modalRoom, setModalRoom] = useState<Room | null>(null);
 
   const getRoomQuantity = (roomId: string): number => {
     return selectedRooms.find(sr => sr.roomId === roomId)?.quantity || 0;
@@ -51,13 +59,75 @@ export const RoomsStep: React.FC<RoomsStepProps> = ({
 
 
   const getRoomPriceDetails = (room: Room) => {
-    return room.roomPricings
+    // Si on a des sous-périodes, on vérifie s'il y a des prix variables
+    if (selectedSubPeriods.length > 0) {
+      const hasDifferentPrices = ageRanges.some(ageRange => {
+        const prices = selectedSubPeriods.map(sp => {
+          const pricing = room.roomPricings.find(
+            rp => rp.ageRangeId === ageRange.id && rp.subPeriodId === sp.id
+          );
+          // Si pas de prix pour cette sous-période, chercher le prix global
+          if (!pricing) {
+            const globalPricing = room.roomPricings.find(
+              rp => rp.ageRangeId === ageRange.id && rp.subPeriodId === null
+            );
+            return globalPricing?.price || 0;
+          }
+          return pricing.price;
+        });
+        // Vérifier si tous les prix sont identiques
+        return new Set(prices).size > 1;
+      });
+
+      if (hasDifferentPrices) {
+        return { hasVariablePrices: true, prices: [] };
+      }
+    }
+
+    // Sinon, on retourne les prix uniques par tranche d'âge
+    const uniquePrices = new Map<string, { name: string, price: number, ageRangeId: string }>();
+
+    room.roomPricings
       .filter(rp => rp.price > 0)
-      .sort((a, b) => a.ageRange.order - b.ageRange.order)
-      .map(rp => ({
-        name: rp.ageRange.name,
-        price: rp.price
-      }));
+      .forEach(rp => {
+        // Si on a des sous-périodes sélectionnées, on ne prend que les prix correspondants
+        if (selectedSubPeriods.length > 0) {
+          if (rp.subPeriodId && selectedSubPeriods.some(sp => sp.id === rp.subPeriodId)) {
+            if (!uniquePrices.has(rp.ageRangeId)) {
+              uniquePrices.set(rp.ageRangeId, {
+                name: rp.ageRange.name,
+                price: rp.price,
+                ageRangeId: rp.ageRangeId
+              });
+            }
+          } else if (!rp.subPeriodId && !uniquePrices.has(rp.ageRangeId)) {
+            // Prix global si pas de prix spécifique pour la sous-période
+            uniquePrices.set(rp.ageRangeId, {
+              name: rp.ageRange.name,
+              price: rp.price,
+              ageRangeId: rp.ageRangeId
+            });
+          }
+        } else {
+          // Pas de sous-périodes, on prend les prix globaux
+          if (!rp.subPeriodId && !uniquePrices.has(rp.ageRangeId)) {
+            uniquePrices.set(rp.ageRangeId, {
+              name: rp.ageRange.name,
+              price: rp.price,
+              ageRangeId: rp.ageRangeId
+            });
+          }
+        }
+      });
+
+    const prices = Array.from(uniquePrices.values())
+      .sort((a, b) => {
+        const orderA = room.roomPricings.find(rp => rp.ageRangeId === a.ageRangeId)?.ageRange.order || 0;
+        const orderB = room.roomPricings.find(rp => rp.ageRangeId === b.ageRangeId)?.ageRange.order || 0;
+        return orderA - orderB;
+      });
+
+    return { hasVariablePrices: false, prices };
   };
 
   return (
@@ -144,15 +214,42 @@ export const RoomsStep: React.FC<RoomsStepProps> = ({
                     <Euro className="h-4 w-4 text-gray-500" />
                     <p className="text-sm font-medium text-gray-700">Prix par personne (séjour complet)</p>
                   </div>
-                  
+
                   <div className="space-y-2">
-                    {priceDetails.length > 0 ? (
-                      priceDetails.map(pd => (
-                        <div key={pd.name} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                          <span className="text-sm font-medium text-gray-700">{pd.name}</span>
-                          <span className="text-base font-bold text-gray-900">{pd.price}€</span>
-                        </div>
-                      ))
+                    {priceDetails.hasVariablePrices ? (
+                      <div className="space-y-2">
+                        <p className="text-sm text-gray-600">Prix variables selon les périodes</p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setModalRoom(room)}
+                          className="w-full flex items-center justify-center gap-2"
+                        >
+                          <Info className="h-4 w-4" />
+                          Voir le détail des prix
+                        </Button>
+                      </div>
+                    ) : priceDetails.prices.length > 0 ? (
+                      <>
+                        {priceDetails.prices.map((pd, index) => (
+                          <div key={`${pd.ageRangeId}-${index}`} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <span className="text-sm font-medium text-gray-700">{pd.name}</span>
+                            <span className="text-base font-bold text-gray-900">{pd.price}€</span>
+                          </div>
+                        ))}
+                        {selectedSubPeriods.length > 0 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setModalRoom(room)}
+                            className="w-full text-xs text-gray-500 hover:text-gray-700"
+                          >
+                            Voir le détail par période
+                          </Button>
+                        )}
+                      </>
                     ) : (
                       <p className="text-sm text-gray-500 italic">Prix non configurés</p>
                     )}
@@ -265,6 +362,18 @@ export const RoomsStep: React.FC<RoomsStepProps> = ({
           </Button>
         </div>
       </div>
+
+      {/* Pricing Modal */}
+      {modalRoom && (
+        <RoomPricingModal
+          isOpen={!!modalRoom}
+          onClose={() => setModalRoom(null)}
+          room={modalRoom}
+          selectedSubPeriods={selectedSubPeriods}
+          allSubPeriods={allSubPeriods}
+          ageRanges={ageRanges}
+        />
+      )}
     </div>
   );
 };

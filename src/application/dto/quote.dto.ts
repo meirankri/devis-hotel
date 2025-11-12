@@ -8,6 +8,7 @@ export const createQuoteRequestSchema = z.object({
   phone: z.string().min(1, 'Le téléphone est requis'),
   checkIn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format de date invalide'),
   checkOut: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format de date invalide'),
+  selectedSubPeriods: z.array(z.string().uuid()).optional(),
   participants: z.array(z.object({
     ageRangeId: z.string().uuid(),
     count: z.number().int().min(0),

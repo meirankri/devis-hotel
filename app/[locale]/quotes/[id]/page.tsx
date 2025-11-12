@@ -19,6 +19,9 @@ export default async function QuotePage({ params }: QuotePageProps) {
         include: {
           hotel: true,
           organization: true,
+          subPeriods: {
+            orderBy: { order: "asc" },
+          },
         },
       },
       quoteParticipants: {
@@ -33,6 +36,7 @@ export default async function QuotePage({ params }: QuotePageProps) {
               roomPricings: {
                 include: {
                   ageRange: true,
+                  subPeriod: true,
                 },
               },
             },
@@ -67,7 +71,12 @@ export default async function QuotePage({ params }: QuotePageProps) {
     })),
   };
 
-  console.log("serializedQuote", JSON.stringify(quote));
+  const { stay, ...quoteWithoutStay } = quote;
+  const { description, ...stayWithoutDescription } = stay;
+  console.log(
+    "serializedQuote",
+    JSON.stringify({ ...quoteWithoutStay, stay: stayWithoutDescription })
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">

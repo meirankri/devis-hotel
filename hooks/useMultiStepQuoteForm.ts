@@ -1,17 +1,19 @@
 import { useState, useCallback, useMemo } from 'react';
-import type { 
-  FormStep, 
-  ParticipantData, 
-  SelectedRoom, 
+import type {
+  FormStep,
+  ParticipantData,
+  SelectedRoom,
   RoomAssignment,
   StepValidation,
-  PriceBreakdown
+  PriceBreakdown,
+  SelectedSubPeriod
 } from '@/types/multi-step-form';
-import type { Room, AgeRange } from '@/types/quote';
+import type { Room, AgeRange, StaySubPeriod } from '@/types/quote';
 
 interface UseMultiStepQuoteFormProps {
   ageRanges: AgeRange[];
   rooms: Room[];
+  subPeriods: StaySubPeriod[];
   checkIn: string;
   checkOut: string;
 }
@@ -19,11 +21,12 @@ interface UseMultiStepQuoteFormProps {
 export const useMultiStepQuoteForm = ({
   ageRanges,
   rooms,
+  subPeriods,
   checkIn,
   checkOut
 }: UseMultiStepQuoteFormProps) => {
   // Form state
-  const [currentStep, setCurrentStep] = useState<FormStep>('participants');
+  const [currentStep, setCurrentStep] = useState<FormStep>('subPeriods');
   const [participants, setParticipants] = useState<ParticipantData[]>(
     ageRanges.map(ar => ({
       ageRangeId: ar.id,
@@ -33,6 +36,7 @@ export const useMultiStepQuoteForm = ({
   );
   const [selectedRooms, setSelectedRooms] = useState<SelectedRoom[]>([]);
   const [roomAssignments, setRoomAssignments] = useState<RoomAssignment[]>([]);
+  const [selectedSubPeriods, setSelectedSubPeriods] = useState<SelectedSubPeriod[]>([]);
 
   // Calculate total participants
   const totalParticipants = useMemo(
@@ -54,11 +58,32 @@ export const useMultiStepQuoteForm = ({
     return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
   }, [checkIn, checkOut]);
 
+  // Update sub-period selection
+  const updateSubPeriodSelection = useCallback((subPeriodId: string, selected: boolean) => {
+    setSelectedSubPeriods(prev => {
+      if (selected) {
+        const subPeriod = subPeriods.find(sp => sp.id === subPeriodId);
+        if (subPeriod && !prev.some(sp => sp.id === subPeriodId)) {
+          return [...prev, {
+            id: subPeriod.id,
+            name: subPeriod.name,
+            startDate: subPeriod.startDate,
+            endDate: subPeriod.endDate,
+            order: subPeriod.order
+          }];
+        }
+      } else {
+        return prev.filter(sp => sp.id !== subPeriodId);
+      }
+      return prev;
+    });
+  }, [subPeriods]);
+
   // Update participant count
   const updateParticipantCount = useCallback((ageRangeId: string, count: number) => {
-    setParticipants(prev => 
-      prev.map(p => 
-        p.ageRangeId === ageRangeId 
+    setParticipants(prev =>
+      prev.map(p =>
+        p.ageRangeId === ageRangeId
           ? { ...p, count: Math.max(0, count) }
           : p
       )
@@ -149,8 +174,14 @@ export const useMultiStepQuoteForm = ({
   // Validate current step
   const validateStep = useCallback((step: FormStep): StepValidation => {
     const errors: string[] = [];
-    
+
     switch (step) {
+      case 'subPeriods':
+        if (subPeriods.length > 0 && selectedSubPeriods.length === 0) {
+          errors.push('Veuillez sélectionner au moins une période');
+        }
+        break;
+
       case 'participants':
         if (totalParticipants === 0) {
           errors.push('Veuillez sélectionner au moins un participant');
@@ -184,27 +215,51 @@ export const useMultiStepQuoteForm = ({
       isValid: errors.length === 0,
       errors
     };
-  }, [totalParticipants, selectedRooms, totalCapacity, totalAssignedParticipants, roomAssignments]);
+  }, [subPeriods, selectedSubPeriods, totalParticipants, selectedRooms, totalCapacity, totalAssignedParticipants, roomAssignments]);
 
   // Calculate price breakdown (prices are per stay, not per night)
   const calculatePriceBreakdown = useCallback((): PriceBreakdown[] => {
     const breakdown: PriceBreakdown[] = [];
-    
+
     roomAssignments.forEach(ra => {
       const room = rooms.find(r => r.id === ra.roomId);
       if (!room) return;
-      
+
       const details = Object.entries(ra.participants)
         .filter(([_, count]) => count > 0)
         .map(([ageRangeId, count]) => {
           const ageRange = ageRanges.find(ar => ar.id === ageRangeId);
-          const pricing = room.roomPricings.find(rp => rp.ageRangeId === ageRangeId);
-          
+
+          // Calculer le prix en fonction des sous-périodes sélectionnées
+          let pricePerPerson = 0;
+
+          if (selectedSubPeriods.length > 0) {
+            // Sommer les prix de chaque sous-période sélectionnée
+            selectedSubPeriods.forEach(subPeriod => {
+              const pricingForPeriod = room.roomPricings.find(
+                rp => rp.ageRangeId === ageRangeId && rp.subPeriodId === subPeriod.id
+              );
+
+              // Si pas de prix pour cette sous-période, utiliser le prix global
+              const fallbackPricing = room.roomPricings.find(
+                rp => rp.ageRangeId === ageRangeId && rp.subPeriodId === null
+              );
+
+              pricePerPerson += pricingForPeriod?.price || fallbackPricing?.price || 0;
+            });
+          } else {
+            // Si pas de sous-périodes, utiliser le prix global
+            const globalPricing = room.roomPricings.find(
+              rp => rp.ageRangeId === ageRangeId && rp.subPeriodId === null
+            );
+            pricePerPerson = globalPricing?.price || 0;
+          }
+
           return {
             ageRangeName: ageRange?.name || '',
             count,
-            pricePerPerson: pricing?.price || 0,
-            subtotal: (pricing?.price || 0) * count // Prix par séjour
+            pricePerPerson,
+            subtotal: pricePerPerson * count // Prix total pour toutes les sous-périodes
           };
         });
       
@@ -222,7 +277,7 @@ export const useMultiStepQuoteForm = ({
     });
     
     return breakdown;
-  }, [roomAssignments, rooms, ageRanges, nights]);
+  }, [roomAssignments, rooms, ageRanges, nights, selectedSubPeriods]);
 
   // Calculate total price
   const totalPrice = useMemo(() => {
@@ -245,8 +300,11 @@ export const useMultiStepQuoteForm = ({
 
   const goNext = useCallback(() => {
     if (!canGoNext) return;
-    
+
     switch (currentStep) {
+      case 'subPeriods':
+        goToStep('participants');
+        break;
       case 'participants':
         goToStep('rooms');
         break;
@@ -258,6 +316,9 @@ export const useMultiStepQuoteForm = ({
 
   const goPrevious = useCallback(() => {
     switch (currentStep) {
+      case 'participants':
+        goToStep('subPeriods');
+        break;
       case 'rooms':
         goToStep('participants');
         break;
@@ -273,27 +334,29 @@ export const useMultiStepQuoteForm = ({
     participants,
     selectedRooms,
     roomAssignments,
+    selectedSubPeriods,
     totalParticipants,
     totalCapacity,
     totalAssignedParticipants,
     nights,
     totalPrice,
-    
+
     // Actions
     updateParticipantCount,
     updateRoomQuantity,
     updateRoomAssignment,
+    updateSubPeriodSelection,
     getRemainingParticipants,
-    
+
     // Validation
     validateStep,
     canGoNext,
-    
+
     // Navigation
     goToStep,
     goNext,
     goPrevious,
-    
+
     // Price calculation
     calculatePriceBreakdown
   };

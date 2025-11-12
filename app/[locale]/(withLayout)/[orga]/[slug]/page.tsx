@@ -42,6 +42,7 @@ export default async function StayPage({ params }: StayPageProps) {
         },
       },
       organization: true,
+      subPeriods: true,
       images: {
         orderBy: [{ isMain: "desc" }, { order: "asc" }],
       },
@@ -89,6 +90,13 @@ export default async function StayPage({ params }: StayPageProps) {
       ...image,
       createdAt: image.createdAt.toISOString(),
       updatedAt: image.updatedAt.toISOString(),
+    })),
+    subPeriods: stay.subPeriods?.map((sp) => ({
+      ...sp,
+      startDate: sp.startDate.toISOString(),
+      endDate: sp.endDate.toISOString(),
+      createdAt: sp.createdAt.toISOString(),
+      updatedAt: sp.updatedAt.toISOString(),
     })),
   };
 
